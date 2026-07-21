@@ -64,7 +64,6 @@ def calculate_technicals(df):
     high_max = df['High'].rolling(window=9).max()
     rsv = (df['Close'] - low_min) / (high_max - low_min) * 100
     
-    # Calculate K and D using iterative method for EMA smoothing
     k = []
     d = []
     k_prev = 50
@@ -104,8 +103,6 @@ def scrape_tw_stock_realtime(symbol):
         change_str = change_spans[0].text.replace(',', '')
         pct_str = change_spans[1].text.strip('()%')
         
-        # Check if it's down (Yahoo TW uses different classes for up/down, but text might not have minus)
-        # We can look at the color class: C($c-trend-down)
         is_down = 'trend-down' in price_span[0].get('class', []) or 'trend-down' in change_spans[0].get('class', [])
         
         last_price = float(price_str)
@@ -125,14 +122,12 @@ def fetch_stock_data(symbol, include_history=False):
     try:
         ticker = yf.Ticker(symbol)
         
-        # Default to yfinance
         data = ticker.fast_info
         last_price = data.last_price
         prev_close = data.previous_close
         change = last_price - prev_close
         change_percent = (change / prev_close) * 100 if prev_close else 0
         
-        # Override with real-time scrape for TW stocks during intraday
         if symbol.endswith('.TW'):
             scraped = scrape_tw_stock_realtime(symbol)
             if scraped:
@@ -146,17 +141,26 @@ def fetch_stock_data(symbol, include_history=False):
         }
         
         if include_history:
-            info = ticker.info
-            result['pe'] = round(info.get('trailingPE', 0), 2) if info.get('trailingPE') else 'N/A'
-            result['eps'] = round(info.get('trailingEps', 0), 2) if info.get('trailingEps') else 'N/A'
-            result['roe'] = round(info.get('returnOnEquity', 0) * 100, 2) if info.get('returnOnEquity') else 'N/A'
-            result['roa'] = round(info.get('returnOnAssets', 0) * 100, 2) if info.get('returnOnAssets') else 'N/A'
+            try:
+                info = ticker.info
+                result['pe'] = round(info.get('trailingPE', 0), 2) if info.get('trailingPE') else 'N/A'
+                result['eps'] = round(info.get('trailingEps', 0), 2) if info.get('trailingEps') else 'N/A'
+                result['roe'] = round(info.get('returnOnEquity', 0) * 100, 2) if info.get('returnOnEquity') else 'N/A'
+                result['roa'] = round(info.get('returnOnAssets', 0) * 100, 2) if info.get('returnOnAssets') else 'N/A'
+            except Exception as e:
+                result['pe'] = 'N/A'
+                result['eps'] = 'N/A'
+                result['roe'] = 'N/A'
+                result['roa'] = 'N/A'
             
-            # Fetch 60 days of history for indicators
-            hist = ticker.history(period="3mo")
-            macd_str, kd_str = calculate_technicals(hist)
-            result['macd'] = macd_str or "N/A"
-            result['kd'] = kd_str or "N/A"
+            try:
+                hist = ticker.history(period="3mo")
+                macd_str, kd_str = calculate_technicals(hist)
+                result['macd'] = macd_str or "N/A"
+                result['kd'] = kd_str or "N/A"
+            except Exception as e:
+                result['macd'] = "N/A"
+                result['kd'] = "N/A"
             
         return result
     except Exception as e:
@@ -184,9 +188,8 @@ def get_screened_stocks():
             data = future.result()
             if data:
                 cp = data['currentPrice']
-                # Dummy valuation logics for target and stop loss based on fundamental metrics
                 target = cp * 1.20
-                stop_loss = cp * 0.92  # 8% stop loss
+                stop_loss = cp * 0.92
                 
                 results.append({
                     "symbol": data['symbol'].replace('.TW', ''),
@@ -204,14 +207,11 @@ def get_screened_stocks():
                     "reason": f"今日漲跌: {data['changePercent']}%"
                 })
         
-        # Sort based on time of day (Taiwan daytime 06:00 - 18:00)
         current_hour = datetime.datetime.now().hour
         is_daytime = 6 <= current_hour < 18
         if is_daytime:
-            # Taiwan stocks first (symbol contains digits)
             results.sort(key=lambda x: 0 if any(c.isdigit() for c in x['symbol']) else 1)
         else:
-            # US stocks first (symbol is letters only)
             results.sort(key=lambda x: 0 if not any(c.isdigit() for c in x['symbol']) else 1)
             
     return jsonify(results)
