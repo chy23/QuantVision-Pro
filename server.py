@@ -7,6 +7,7 @@ import concurrent.futures
 import requests
 from bs4 import BeautifulSoup
 import datetime
+import time
 
 app = Flask(__name__)
 CORS(app)
@@ -127,16 +128,25 @@ def scrape_tw_stock_realtime(symbol):
         print(f"Scraping error for {symbol}: {e}")
         return None
 
+DATA_CACHE = {}
+CACHE_TTL = 21600  # 6 hours
+
 def fetch_stock_data(symbol, include_history=False):
     try:
-        ticker = yf.Ticker(symbol)
+        session = requests.Session()
+        session.headers.update({
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36'
+        })
+        ticker = yf.Ticker(symbol, session=session)
         
+        # Default to yfinance
         data = ticker.fast_info
         last_price = data.last_price
         prev_close = data.previous_close
         change = last_price - prev_close
         change_percent = (change / prev_close) * 100 if prev_close else 0
         
+        # Override with real-time scrape for TW stocks during intraday
         if symbol.endswith('.TW'):
             scraped = scrape_tw_stock_realtime(symbol)
             if scraped:
@@ -150,28 +160,51 @@ def fetch_stock_data(symbol, include_history=False):
         }
         
         if include_history:
-            try:
-                info = ticker.info
-                result['pe'] = round(info.get('trailingPE', 0), 2) if info.get('trailingPE') else 'N/A'
-                result['eps'] = round(info.get('trailingEps', 0), 2) if info.get('trailingEps') else 'N/A'
-                result['roe'] = round(info.get('returnOnEquity', 0) * 100, 2) if info.get('returnOnEquity') else 'N/A'
-                result['roa'] = round(info.get('returnOnAssets', 0) * 100, 2) if info.get('returnOnAssets') else 'N/A'
-            except Exception as e:
-                print(f"Info fetch failed for {symbol}: {e}")
-                result['pe'] = 'N/A'
-                result['eps'] = 'N/A'
-                result['roe'] = 'N/A'
-                result['roa'] = 'N/A'
-            
-            try:
-                hist = ticker.history(period="3mo")
-                macd_str, kd_str = calculate_technicals(hist)
-                result['macd'] = macd_str or "N/A"
-                result['kd'] = kd_str or "N/A"
-            except Exception as e:
-                print(f"History fetch failed for {symbol}: {e}")
-                result['macd'] = "N/A"
-                result['kd'] = "N/A"
+            now = time.time()
+            if symbol in DATA_CACHE and (now - DATA_CACHE[symbol]['timestamp']) < CACHE_TTL:
+                cached = DATA_CACHE[symbol]
+                result['pe'] = cached['pe']
+                result['eps'] = cached['eps']
+                result['roe'] = cached['roe']
+                result['roa'] = cached['roa']
+                result['macd'] = cached['macd']
+                result['kd'] = cached['kd']
+            else:
+                try:
+                    info = ticker.info
+                    result['pe'] = round(info.get('trailingPE', 0), 2) if info.get('trailingPE') else 'N/A'
+                    result['eps'] = round(info.get('trailingEps', 0), 2) if info.get('trailingEps') else 'N/A'
+                    result['roe'] = round(info.get('returnOnEquity', 0) * 100, 2) if info.get('returnOnEquity') else 'N/A'
+                    result['roa'] = round(info.get('returnOnAssets', 0) * 100, 2) if info.get('returnOnAssets') else 'N/A'
+                except Exception as e:
+                    print(f"Info fetch failed for {symbol}: {e}")
+                    result['pe'] = 'N/A'
+                    result['eps'] = 'N/A'
+                    result['roe'] = 'N/A'
+                    result['roa'] = 'N/A'
+                
+                try:
+                    # Fetch 60 days of history for indicators
+                    hist = ticker.history(period="3mo")
+                    macd_str, kd_str = calculate_technicals(hist)
+                    result['macd'] = macd_str or "N/A"
+                    result['kd'] = kd_str or "N/A"
+                except Exception as e:
+                    print(f"History fetch failed for {symbol}: {e}")
+                    result['macd'] = "N/A"
+                    result['kd'] = "N/A"
+                
+                # Cache if we successfully got some data
+                if result['pe'] != 'N/A' or result['macd'] != 'N/A':
+                    DATA_CACHE[symbol] = {
+                        'timestamp': now,
+                        'pe': result['pe'],
+                        'eps': result['eps'],
+                        'roe': result['roe'],
+                        'roa': result['roa'],
+                        'macd': result['macd'],
+                        'kd': result['kd']
+                    }
             
         return result
     except Exception as e:
@@ -181,7 +214,7 @@ def fetch_stock_data(symbol, include_history=False):
 @app.route('/api/core-stocks', methods=['GET'])
 def get_core_stocks():
     results = {}
-    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
         future_to_symbol = {executor.submit(fetch_stock_data, yf_sym, False): orig_sym for orig_sym, yf_sym in CORE_SYMBOLS.items()}
         for future in concurrent.futures.as_completed(future_to_symbol):
             orig_sym = future_to_symbol[future]
@@ -193,14 +226,15 @@ def get_core_stocks():
 @app.route('/api/screen', methods=['GET'])
 def get_screened_stocks():
     results = []
-    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
         futures = [executor.submit(fetch_stock_data, sym, True) for sym in SCREEN_SYMBOLS]
         for future in concurrent.futures.as_completed(futures):
             data = future.result()
             if data:
                 cp = data['currentPrice']
+                # Dummy valuation logics for target and stop loss based on fundamental metrics
                 target = cp * 1.20
-                stop_loss = cp * 0.92
+                stop_loss = cp * 0.92  # 8% stop loss
                 
                 results.append({
                     "symbol": data['symbol'].replace('.TW', ''),
@@ -218,11 +252,14 @@ def get_screened_stocks():
                     "reason": f"今日漲跌: {data['changePercent']}%"
                 })
         
+        # Sort based on time of day (Taiwan daytime 06:00 - 18:00)
         current_hour = datetime.datetime.now().hour
         is_daytime = 6 <= current_hour < 18
         if is_daytime:
+            # Taiwan stocks first (symbol contains digits)
             results.sort(key=lambda x: 0 if any(c.isdigit() for c in x['symbol']) else 1)
         else:
+            # US stocks first (symbol is letters only)
             results.sort(key=lambda x: 0 if not any(c.isdigit() for c in x['symbol']) else 1)
             
     return jsonify(results)
