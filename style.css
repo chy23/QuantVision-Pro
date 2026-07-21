@@ -237,3 +237,42 @@ tr:hover {
   display: block;
   animation: fadeIn 0.4s ease forwards;
 }
+
+/* Market Selection Tabs */
+.market-tabs {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+  justify-content: center;
+}
+
+.market-btn {
+  background: var(--card-bg);
+  border: 2px solid var(--card-border);
+  color: var(--text-secondary);
+  padding: 1rem 3rem;
+  border-radius: 40px;
+  cursor: pointer;
+  font-size: 1.25rem;
+  font-weight: 700;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: var(--glass-blur);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.market-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+  color: var(--text-primary);
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+.market-btn.active {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(167, 139, 250, 0.2) 100%);
+  border-color: var(--accent-color);
+  color: var(--text-primary);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.4), inset 0 0 10px rgba(167, 139, 250, 0.2);
+}

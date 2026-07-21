@@ -2,13 +2,38 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QuantVision Pro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <!-- 強制不快取標籤 -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  
+  <title>QuantVision Pro - 智能台美股分析系統</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f172a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="icon-192x192.png">
+  
+  <!-- 自動清除快取腳本 -->
+  <script>
+    // 每次載入網頁時，主動清除所有 Service Worker 快取
+    if ('caches' in window) {
+      caches.keys().then((names) => {
+        names.forEach(name => {
+          caches.delete(name);
+        });
+      });
+    }
+    // 強制更新 Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) {
+          registration.update();
+        }
+      });
+    }
+  </script>
   <link rel="stylesheet" href="style.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
@@ -45,11 +70,72 @@
       </div>
     </section>
 
+    <!-- Market Selection Tabs -->
+    <div class="market-tabs fade-in" style="animation-delay: 0.15s; flex-wrap: wrap; align-items: center;">
+      <button class="market-btn active" data-market="TW">🇹🇼 台灣市場</button>
+      <button class="market-btn" data-market="US">🇺🇸 美國市場</button>
+      <button class="market-btn" data-market="OTHER">🌍 其他股市推薦</button>
+      <button class="refresh-btn" id="refresh-btn" title="重新載入最新資料">🔄 重新整理</button>
+    </div>
+
+    <!-- Custom Search and Filter -->
+    <div class="search-container fade-in" style="animation-delay: 0.18s; display: flex; gap: 10px; margin-bottom: 2rem; justify-content: center; flex-wrap: wrap;">
+      <select id="category-filter" class="search-input" style="padding: 0.8rem; border-radius: 8px; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2);">
+        <option value="">選擇台股類別...</option>
+        <option value="半導體業">半導體業</option>
+        <option value="電腦及週邊設備業">電腦及週邊設備業</option>
+        <option value="光電業">光電業</option>
+        <option value="通信網路業">通信網路業</option>
+        <option value="電子零組件業">電子零組件業</option>
+        <option value="電子通路業">電子通路業</option>
+        <option value="資訊服務業">資訊服務業</option>
+        <option value="其他電子業">其他電子業</option>
+        <option value="水泥工業">水泥工業</option>
+        <option value="食品工業">食品工業</option>
+        <option value="塑膠工業">塑膠工業</option>
+        <option value="紡織纖維">紡織纖維</option>
+        <option value="電機機械">電機機械</option>
+        <option value="電器電纜">電器電纜</option>
+        <option value="化學工業">化學工業</option>
+        <option value="生技醫療業">生技醫療業</option>
+        <option value="玻璃陶瓷">玻璃陶瓷</option>
+        <option value="造紙工業">造紙工業</option>
+        <option value="鋼鐵工業">鋼鐵工業</option>
+        <option value="橡膠工業">橡膠工業</option>
+        <option value="汽車工業">汽車工業</option>
+        <option value="建材營造業">建材營造業</option>
+        <option value="航運業">航運業</option>
+        <option value="觀光餐旅">觀光餐旅</option>
+        <option value="貿易百貨業">貿易百貨業</option>
+        <option value="油電燃氣業">油電燃氣業</option>
+        <option value="綜合">綜合</option>
+        <option value="金融保險業">金融保險業</option>
+        <option value="其他業">其他業</option>
+        <option value="綠能環保">綠能環保</option>
+        <option value="數位雲端">數位雲端</option>
+        <option value="運動休閒">運動休閒</option>
+        <option value="居家生活">居家生活</option>
+      </select>
+      <input type="text" id="stock-search" class="search-input" placeholder="輸入代碼如 TSLA, 2330" style="padding: 0.8rem; border-radius: 8px; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); width: 200px;" />
+      <button id="search-btn" class="refresh-btn">🔍 分析</button>
+    </div>
+
+    <!-- Search Results Section (Hidden by default) -->
+    <section id="search-results-section" style="margin-bottom: 3rem; display: none;" class="fade-in">
+      <h2 class="section-title">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        自訂分析結果
+      </h2>
+      <div class="grid-layout" id="search-results-container">
+        <!-- Injected by JS -->
+      </div>
+    </section>
+
     <!-- Core Stocks Valuation -->
     <section style="margin-bottom: 4rem; animation-delay: 0.2s;" class="fade-in">
       <h2 class="section-title">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-        代表性科技巨頭 (7 檔) 估值甜蜜點
+        市場焦點 (15 檔) 估值甜蜜點
       </h2>
       <div class="grid-layout" id="core-stocks-container">
         <!-- Injected by JS -->
