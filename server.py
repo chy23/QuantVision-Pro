@@ -17,8 +17,16 @@ CORE_SYMBOLS = {
     "2317": "2317.TW",
     "2382": "2382.TW",
     "3481": "3481.TW",
+    "2308": "2308.TW",
+    "2881": "2881.TW",
     "MSFT": "MSFT",
-    "NVDA": "NVDA"
+    "NVDA": "NVDA",
+    "AAPL": "AAPL",
+    "GOOGL": "GOOGL",
+    "AMZN": "AMZN",
+    "TSLA": "TSLA",
+    "ASML": "ASML",
+    "7203.T": "7203.T"
 }
 
 SCREEN_SYMBOLS = [
@@ -37,6 +45,7 @@ SYMBOL_NAMES = {
     "TSM": "台積電 ADR (TSM)",
     "AVGO": "博通 (Broadcom)",
     "ASML": "艾司摩爾 (ASML)",
+    "7203.T": "豐田汽車 (Toyota)",
     "2308.TW": "台達電 (Delta)",
     "2881.TW": "富邦金 (Fubon)",
     "2882.TW": "國泰金 (Cathay)",
