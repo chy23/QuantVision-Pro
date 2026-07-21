@@ -2,30 +2,6 @@ import os
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import yfinance as yf
-
-import urllib.request, json, ssl
-
-# Fetch TWSE fundamental data once globally and cache it
-TWSE_FUNDAMENTALS = {}
-def get_twse_fundamentals():
-    global TWSE_FUNDAMENTALS
-    if TWSE_FUNDAMENTALS:
-        return TWSE_FUNDAMENTALS
-    
-    ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
-    
-    try:
-        req = urllib.request.Request('https://openapi.twse.com.tw/v1/opendata/BWIBBU_d', headers={'User-Agent': 'Mozilla/5.0'})
-        with urllib.request.urlopen(req, context=ctx) as resp:
-            data = json.loads(resp.read().decode('utf-8'))
-            for item in data:
-                TWSE_FUNDAMENTALS[item['Code']] = item
-    except Exception as e:
-        print("TWSE Fundamental Error:", e)
-    return TWSE_FUNDAMENTALS
-
 import pandas as pd
 import concurrent.futures
 import requests
