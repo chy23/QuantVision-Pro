@@ -1,3 +1,4 @@
+import os
 from flask import Flask, jsonify
 from flask_cors import CORS
 import yfinance as yf
@@ -145,17 +146,29 @@ def fetch_stock_data(symbol, include_history=False):
         }
         
         if include_history:
-            info = ticker.info
-            result['pe'] = round(info.get('trailingPE', 0), 2) if info.get('trailingPE') else 'N/A'
-            result['eps'] = round(info.get('trailingEps', 0), 2) if info.get('trailingEps') else 'N/A'
-            result['roe'] = round(info.get('returnOnEquity', 0) * 100, 2) if info.get('returnOnEquity') else 'N/A'
-            result['roa'] = round(info.get('returnOnAssets', 0) * 100, 2) if info.get('returnOnAssets') else 'N/A'
+            try:
+                info = ticker.info
+                result['pe'] = round(info.get('trailingPE', 0), 2) if info.get('trailingPE') else 'N/A'
+                result['eps'] = round(info.get('trailingEps', 0), 2) if info.get('trailingEps') else 'N/A'
+                result['roe'] = round(info.get('returnOnEquity', 0) * 100, 2) if info.get('returnOnEquity') else 'N/A'
+                result['roa'] = round(info.get('returnOnAssets', 0) * 100, 2) if info.get('returnOnAssets') else 'N/A'
+            except Exception as e:
+                print(f"Info fetch failed for {symbol}: {e}")
+                result['pe'] = 'N/A'
+                result['eps'] = 'N/A'
+                result['roe'] = 'N/A'
+                result['roa'] = 'N/A'
             
-            # Fetch 60 days of history for indicators
-            hist = ticker.history(period="3mo")
-            macd_str, kd_str = calculate_technicals(hist)
-            result['macd'] = macd_str or "N/A"
-            result['kd'] = kd_str or "N/A"
+            try:
+                # Fetch 60 days of history for indicators
+                hist = ticker.history(period="3mo")
+                macd_str, kd_str = calculate_technicals(hist)
+                result['macd'] = macd_str or "N/A"
+                result['kd'] = kd_str or "N/A"
+            except Exception as e:
+                print(f"History fetch failed for {symbol}: {e}")
+                result['macd'] = "N/A"
+                result['kd'] = "N/A"
             
         return result
     except Exception as e:
