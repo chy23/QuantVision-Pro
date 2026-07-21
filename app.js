@@ -73,7 +73,7 @@ const coreStocks = [
 
 // Mock data structure kept as fallback, but we'll fetch from API
 const hostname = window.location.hostname || '127.0.0.1';
-const API_BASE = `http://${hostname}:5001/api`;
+const API_BASE = `http://${hostname}:5002/api`;
 
 async function fetchCoreStocksData() {
   try {
