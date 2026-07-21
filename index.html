@@ -1,13 +1,252 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>essay-guide-platform</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <!-- 強制不快取標籤 -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  
+  <title>QuantVision Pro - 智能台美股分析系統</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="icon-192x192.png">
+  
+  <!-- 自動清除快取腳本 -->
+  <script>
+    // 每次載入網頁時，主動清除所有 Service Worker 快取
+    if ('caches' in window) {
+      caches.keys().then((names) => {
+        names.forEach(name => {
+          caches.delete(name);
+        });
+      });
+    }
+    // 強制更新 Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) {
+          registration.update();
+        }
+      });
+    }
+  </script>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <header class="fade-in">
+      <h1>QuantVision Pro</h1>
+      <p class="subtitle">台美股估值監測與全球總經分析系統 (2026 最新數據)</p>
+    </header>
+
+    <!-- Market Overview Ticker -->
+    <section class="mb-12 fade-in" style="margin-bottom: 2rem;">
+      <div class="glass-panel" style="padding: 1rem; overflow-x: auto; white-space: nowrap; display: flex; gap: 1.5rem;" id="market-overview-ticker">
+        <div style="color: var(--text-secondary); text-align: center; width: 100%;">載入大盤即時指數中...</div>
+      </div>
+    </section>
+
+    <!-- Global Economy Dashboard -->
+    <section class="mb-12 fade-in" style="margin-bottom: 3rem; animation-delay: 0.1s;">
+      <h2 class="section-title">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+        全球經濟情勢分析
+      </h2>
+      <div class="glass-panel" style="display: flex; flex-direction: column; gap: 1rem;">
+        <p><strong>總體經濟現況 (2026 Q3)：</strong></p>
+        <p>隨著 AI 基礎設施佈建進入第二階段（由單純算力擴張轉向邊緣運算與應用變現），全球科技產業迎來新一波換機潮。美國聯準會（Fed）在經歷前兩年的利率調整後，目前利率水準維持在中性偏寬鬆區間，資金面有利於股市估值擴張。</p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
+          <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px;">
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">美國 CPI 年增率</div>
+            <div style="font-size: 1.5rem; font-weight: 700; color: var(--success-color);">2.4% <span style="font-size: 0.8rem;">(穩定)</span></div>
+          </div>
+          <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px;">
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">台灣外銷訂單連增</div>
+            <div style="font-size: 1.5rem; font-weight: 700; color: var(--success-color);">14 個月 <span style="font-size: 0.8rem;">(AI帶動)</span></div>
+          </div>
+          <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px;">
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">VIX 恐慌指數</div>
+            <div style="font-size: 1.5rem; font-weight: 700; color: var(--accent-hover);">15.2 <span style="font-size: 0.8rem;">(風險偏好高)</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Market Selection Tabs -->
+    <div class="market-tabs fade-in" style="animation-delay: 0.15s; flex-wrap: wrap; align-items: center;">
+      <button class="market-btn active" data-market="TW">🇹🇼 台灣市場</button>
+      <button class="market-btn" data-market="US">🇺🇸 美國市場</button>
+      <button class="market-btn" data-market="OTHER">🌍 其他股市推薦</button>
+      <button class="refresh-btn" id="refresh-btn" title="重新載入最新資料">🔄 重新整理</button>
+    </div>
+
+    <!-- Custom Search and Filter -->
+    <div class="search-container fade-in" style="animation-delay: 0.18s; display: flex; gap: 10px; margin-bottom: 2rem; justify-content: center; flex-wrap: wrap;">
+      <select id="category-filter" class="search-input" style="padding: 0.8rem; border-radius: 8px; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2);">
+        <option value="">選擇台股類別...</option>
+        <option value="半導體業">半導體業</option>
+        <option value="電腦及週邊設備業">電腦及週邊設備業</option>
+        <option value="光電業">光電業</option>
+        <option value="通信網路業">通信網路業</option>
+        <option value="電子零組件業">電子零組件業</option>
+        <option value="電子通路業">電子通路業</option>
+        <option value="資訊服務業">資訊服務業</option>
+        <option value="其他電子業">其他電子業</option>
+        <option value="水泥工業">水泥工業</option>
+        <option value="食品工業">食品工業</option>
+        <option value="塑膠工業">塑膠工業</option>
+        <option value="紡織纖維">紡織纖維</option>
+        <option value="電機機械">電機機械</option>
+        <option value="電器電纜">電器電纜</option>
+        <option value="化學工業">化學工業</option>
+        <option value="生技醫療業">生技醫療業</option>
+        <option value="玻璃陶瓷">玻璃陶瓷</option>
+        <option value="造紙工業">造紙工業</option>
+        <option value="鋼鐵工業">鋼鐵工業</option>
+        <option value="橡膠工業">橡膠工業</option>
+        <option value="汽車工業">汽車工業</option>
+        <option value="建材營造業">建材營造業</option>
+        <option value="航運業">航運業</option>
+        <option value="觀光餐旅">觀光餐旅</option>
+        <option value="貿易百貨業">貿易百貨業</option>
+        <option value="油電燃氣業">油電燃氣業</option>
+        <option value="綜合">綜合</option>
+        <option value="金融保險業">金融保險業</option>
+        <option value="其他業">其他業</option>
+        <option value="綠能環保">綠能環保</option>
+        <option value="數位雲端">數位雲端</option>
+        <option value="運動休閒">運動休閒</option>
+        <option value="居家生活">居家生活</option>
+      </select>
+      <input type="text" id="stock-search" class="search-input" placeholder="輸入代碼如 TSLA, 2330" style="padding: 0.8rem; border-radius: 8px; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); width: 200px;" />
+      <button id="search-btn" class="refresh-btn">🔍 分析</button>
+    </div>
+
+    <!-- Search Results Section (Hidden by default) -->
+    <section id="search-results-section" style="margin-bottom: 3rem; display: none;" class="fade-in">
+      <h2 class="section-title">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        自訂分析結果
+      </h2>
+      <div class="grid-layout" id="search-results-container">
+        <!-- Injected by JS -->
+      </div>
+    </section>
+
+    <!-- Core Stocks Valuation -->
+    <section style="margin-bottom: 4rem; animation-delay: 0.2s;" class="fade-in">
+      <h2 class="section-title">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        市場焦點 (15 檔) 估值甜蜜點
+      </h2>
+      <div class="grid-layout" id="core-stocks-container">
+        <!-- Injected by JS -->
+      </div>
+    </section>
+
+    <!-- Strategic Recommendations -->
+    <section class="fade-in" style="animation-delay: 0.3s;">
+      <h2 class="section-title">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        台美股持股策略建議
+      </h2>
+      
+      <div class="glass-panel">
+        <div class="tabs">
+          <button class="tab-btn active" data-target="short">短期操作 (1-2週)</button>
+          <button class="tab-btn" data-target="mid">中期波段 (2-4週)</button>
+          <button class="tab-btn" data-target="long">長期存股 (4週以上)</button>
+        </div>
+
+        <div id="content-short" class="tab-content active">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th style="min-width: 120px;">標的/名稱</th>
+                  <th>目前價位</th>
+                  <th>建議買入價</th>
+                  <th>停損點</th>
+                  <th>P/E</th>
+                  <th>EPS</th>
+                  <th>ROE</th>
+                  <th>ROA</th>
+                  <th>KD (K/D)</th>
+                  <th>MACD (M/S)</th>
+                  <th style="min-width: 150px;">操作理由</th>
+                </tr>
+              </thead>
+              <tbody id="table-short"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="content-mid" class="tab-content">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th style="min-width: 120px;">標的/名稱</th>
+                  <th>目前價位</th>
+                  <th>建議買入價</th>
+                  <th>停損點</th>
+                  <th>P/E</th>
+                  <th>EPS</th>
+                  <th>ROE</th>
+                  <th>ROA</th>
+                  <th>KD (K/D)</th>
+                  <th>MACD (M/S)</th>
+                  <th style="min-width: 150px;">操作理由</th>
+                </tr>
+              </thead>
+              <tbody id="table-mid"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="content-long" class="tab-content">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th style="min-width: 120px;">標的/名稱</th>
+                  <th>目前價位</th>
+                  <th>建議買入價</th>
+                  <th>停損點</th>
+                  <th>P/E</th>
+                  <th>EPS</th>
+                  <th>ROE</th>
+                  <th>ROA</th>
+                  <th>KD (K/D)</th>
+                  <th>MACD (M/S)</th>
+                  <th style="min-width: 150px;">操作理由</th>
+                </tr>
+              </thead>
+              <tbody id="table-long"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js')
+          .then(registration => {
+            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+          }, err => {
+            console.log('ServiceWorker registration failed: ', err);
+          });
+      });
+    }
+  </script>
+</body>
 </html>
