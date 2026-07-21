@@ -1,5 +1,5 @@
 import os
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 import yfinance as yf
 import pandas as pd
@@ -74,6 +74,7 @@ def calculate_technicals(df):
     high_max = df['High'].rolling(window=9).max()
     rsv = (df['Close'] - low_min) / (high_max - low_min) * 100
     
+    # Calculate K and D using iterative method for EMA smoothing
     k = []
     d = []
     k_prev = 50
@@ -262,6 +263,58 @@ def get_screened_stocks():
             # US stocks first (symbol is letters only)
             results.sort(key=lambda x: 0 if not any(c.isdigit() for c in x['symbol']) else 1)
             
+    return jsonify(results)
+
+@app.route('/api/analyze', methods=['GET'])
+def analyze_stocks():
+    symbols = request.args.get('symbols', '')
+    if not symbols:
+        return jsonify([])
+        
+    symbol_list = [s.strip().upper() for s in symbols.split(',') if s.strip()]
+    for i in range(len(symbol_list)):
+        if symbol_list[i].isdigit():
+            symbol_list[i] = f"{symbol_list[i]}.TW"
+            
+    results = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        futures = [executor.submit(fetch_stock_data, sym, True) for sym in symbol_list]
+        for future in concurrent.futures.as_completed(futures):
+            data = future.result()
+            if data:
+                cp = data['currentPrice']
+                pe = data['pe']
+                
+                if isinstance(pe, (int, float)) and pe > 0:
+                    target = cp * 1.15
+                    sweet_spot = cp * 0.9
+                    anchor = f"預估 P/E < {round(pe * 0.9, 1)} 倍"
+                    
+                    if pe > 40:
+                        logic = f"目前本益比偏高 ({pe}倍)，建議等回檔至 {round(sweet_spot, 2)} 以下再介入，風險較低。"
+                    elif pe < 15:
+                        logic = f"目前本益比偏低 ({pe}倍)，具備價值投資潛力。若基本面無惡化，低於 {round(sweet_spot, 2)} 是不錯的買點。"
+                    else:
+                        logic = f"本益比 {pe} 倍位於合理區間。可觀察均線支撐，建議在 {round(sweet_spot, 2)} 附近分批佈局。"
+                else:
+                    sweet_spot = cp * 0.95
+                    anchor = "技術面支撐"
+                    logic = f"暫無有效本益比資訊。建議以技術面(MACD/KD)作為進出依據，停損設 {round(sweet_spot, 2)}。"
+
+                results.append({
+                    "symbol": data['symbol'].replace('.TW', ''),
+                    "name": SYMBOL_NAMES.get(data['symbol'], data['symbol']),
+                    "type": "動態分析標的",
+                    "eps": f"{data['eps']}",
+                    "efficiency": f"ROE {data['roe']}%" if data['roe'] != 'N/A' else "N/A",
+                    "valuationAnchor": anchor,
+                    "sweetSpot": f"{round(sweet_spot, 2)} 以下",
+                    "logic": logic,
+                    "currentPrice": f"{cp}",
+                    "change": data['change'],
+                    "changePercent": data['changePercent']
+                })
+                
     return jsonify(results)
 
 if __name__ == '__main__':
