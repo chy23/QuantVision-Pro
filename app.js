@@ -72,8 +72,8 @@ const coreStocks = [
 ];
 
 // Mock data structure kept as fallback, but we'll fetch from API
-const hostname = window.location.hostname || '127.0.0.1';
-const API_BASE = `http://${hostname}:5002/api`;
+// 設定後端 API 網址 (指向 Render 雲端伺服器)
+const API_BASE = 'https://quantvision-pro.onrender.com/api';
 
 async function fetchCoreStocksData() {
   try {
