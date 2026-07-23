@@ -155,6 +155,27 @@ const coreStocks = [
 // 設定後端 API 網址 (指向 Render 雲端伺服器)
 const API_BASE = 'https://quantvision-pro.onrender.com/api';
 
+
+// 具有自動重試機制的 fetch 函式 (解決 Render 免費伺服器冷啟動或暫時性 502 錯誤)
+async function fetchWithRetry(url, options = {}, retries = 3, backoff = 2000) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await fetchWithRetry(url, options);
+      if (response.ok) {
+        return response;
+      }
+      console.warn(`Fetch failed with status ${response.status}. Retrying in ${backoff}ms... (${i+1}/${retries})`);
+      if (i < retries - 1) await new Promise(r => setTimeout(r, backoff));
+    } catch (err) {
+      console.warn(`Fetch error: ${err.message}. Retrying in ${backoff}ms... (${i+1}/${retries})`);
+      if (i === retries - 1) throw err;
+      await new Promise(r => setTimeout(r, backoff));
+    }
+  }
+  throw new Error(`API 請求失敗，已達最大重試次數 (${retries})`);
+}
+
+
 let cachedCoreStocks = null;
 let cachedScreenedStocks = null;
 let currentMarket = 'TW';
@@ -168,7 +189,7 @@ function getMarket(symbol) {
 
 async function fetchCoreStocksData() {
   try {
-    const response = await fetch(`${API_BASE}/core-stocks`, { cache: 'no-store' });
+    const response = await fetchWithRetry(`${API_BASE}/core-stocks`, { cache: 'no-store' });
     return await response.json();
   } catch (e) {
     console.error("Failed to fetch core stocks:", e);
@@ -178,7 +199,7 @@ async function fetchCoreStocksData() {
 
 async function fetchScreenedStocks() {
   try {
-    const response = await fetch(`${API_BASE}/screen`, { cache: 'no-store' });
+    const response = await fetchWithRetry(`${API_BASE}/screen`, { cache: 'no-store' });
     return await response.json();
   } catch (e) {
     console.error("Failed to fetch screened stocks:", e);
@@ -200,7 +221,7 @@ async function renderStockCards() {
   
   try {
     const symbols = filteredStocks.map(s => s.symbol).join(',');
-    const response = await fetch(`${API_BASE}/analyze?symbols=${encodeURIComponent(symbols)}`);
+    const response = await fetchWithRetry(`${API_BASE}/analyze?symbols=${encodeURIComponent(symbols)}`);
     if (!response.ok) throw new Error("API Request Failed");
     const dynamicDataList = await response.json();
     
@@ -2520,7 +2541,7 @@ const CATEGORY_MAP = {
         
         try {
           // Calls the rich Yahoo API
-          const response = await fetch(`${API_BASE}/analyze?symbols=${encodeURIComponent(symbolsParam)}`);
+          const response = await fetchWithRetry(`${API_BASE}/analyze?symbols=${encodeURIComponent(symbolsParam)}`);
           if (response.ok) {
             const data = await response.json();
             
@@ -2595,7 +2616,7 @@ const CATEGORY_MAP = {
       searchResultsContainer.innerHTML = '<div style="color: var(--text-secondary); grid-column: 1 / -1; text-align: center;">正在向雲端引擎請求動態分析，請稍候...</div>';
 
       try {
-        const response = await fetch(`${API_BASE}/analyze?symbols=${encodeURIComponent(symbols)}`);
+        const response = await fetchWithRetry(`${API_BASE}/analyze?symbols=${encodeURIComponent(symbols)}`);
         const data = await response.json();
         
         if (data.length === 0) {
@@ -2675,7 +2696,7 @@ async function loadMarketOverview() {
   
   try {
     const symbolsParam = indices.map(i => i.symbol).join(',');
-    const response = await fetch(`${API_BASE}/analyze?symbols=${encodeURIComponent(symbolsParam)}`);
+    const response = await fetchWithRetry(`${API_BASE}/analyze?symbols=${encodeURIComponent(symbolsParam)}`);
     if (!response.ok) throw new Error("API Failed");
     const data = await response.json();
     
