@@ -283,9 +283,7 @@ async function renderStockCards() {
       }
     }
     
-    if (dynamicDataList.length === 0) {
-      throw new Error("All batches failed");
-    }
+    // If all batches failed, we just proceed and render the cards without live prices
     
     // Convert array to dictionary keyed by symbol
     const dynamicData = {};
