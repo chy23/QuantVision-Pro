@@ -56,7 +56,8 @@ CORE_SYMBOLS = {
 
 SCREEN_SYMBOLS = [
     "AAPL", "GOOGL", "AMZN", "META", "TSLA", "AMD", "QCOM", "TSM", "AVGO", "ASML",
-    "2308.TW", "2881.TW", "2882.TW", "3231.TW", "2356.TW", "2603.TW", "1519.TW", "1513.TW", "2303.TW", "3034.TW"
+    "2308.TW", "2881.TW", "2882.TW", "3231.TW", "2356.TW", "2603.TW", "1519.TW", "1513.TW", "2303.TW", "3034.TW",
+    "7203.T", "9984.T", "6758.T", "8035.T", "0700.HK", "9988.HK", "1299.HK", "MC.PA", "NOVO-B.CO", "SAP.DE", "BHP.AX"
 ]
 
 SYMBOL_NAMES = {
@@ -71,6 +72,16 @@ SYMBOL_NAMES = {
     "AVGO": "博通 (Broadcom)",
     "ASML": "艾司摩爾 (ASML)",
     "7203.T": "豐田汽車 (Toyota)",
+    "9984.T": "軟銀 (SoftBank)",
+    "6758.T": "索尼 (Sony)",
+    "8035.T": "東京威力 (Tokyo Electron)",
+    "0700.HK": "騰訊 (Tencent)",
+    "9988.HK": "阿里巴巴 (Alibaba)",
+    "1299.HK": "友邦保險 (AIA)",
+    "MC.PA": "路易威登 (LVMH)",
+    "NOVO-B.CO": "諾和諾德 (Novo Nordisk)",
+    "SAP.DE": "思愛普 (SAP)",
+    "BHP.AX": "必和必拓 (BHP)",
     "2308.TW": "台達電 (Delta)",
     "2881.TW": "富邦金 (Fubon)",
     "2882.TW": "國泰金 (Cathay)",

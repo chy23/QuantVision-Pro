@@ -225,10 +225,9 @@ function getMarketBadge(market) {
 let currentMarket = 'TW';
 
 function getMarket(symbol) {
-  if (symbol === 'ASML' || symbol.endsWith('.T')) {
-    return 'OTHER';
-  }
-  return symbol.match(/^\d+/) ? 'TW' : 'US';
+  if (symbol.endsWith('.TW')) return 'TW';
+  if (symbol === 'ASML' || (symbol.includes('.') && !symbol.endsWith('.TW'))) return 'OTHER';
+  return 'US';
 }
 
 async function fetchCoreStocksData() {
