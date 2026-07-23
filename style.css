@@ -276,3 +276,10 @@ tr:hover {
   color: var(--text-primary);
   box-shadow: 0 0 20px rgba(59, 130, 246, 0.4), inset 0 0 10px rgba(167, 139, 250, 0.2);
 }
+
+/* Add pulse animation for market open dot */
+@keyframes pulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 4px rgba(16, 185, 129, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}

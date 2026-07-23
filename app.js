@@ -178,6 +178,50 @@ async function fetchWithRetry(url, options = {}, retries = 3, backoff = 2000) {
 
 let cachedCoreStocks = null;
 let cachedScreenedStocks = null;
+
+
+// --- Market Open Status Utility ---
+function getMarketStatus(market) {
+  const now = new Date();
+  const utcDay = now.getUTCDay();
+  const utcHour = now.getUTCHours();
+  const utcMinute = now.getUTCMinutes();
+  
+  const isWeekdayUTC = utcDay >= 1 && utcDay <= 5;
+  
+  if (market === 'TW') {
+    if (!isWeekdayUTC) return false;
+    const timeNum = utcHour * 100 + utcMinute;
+    // TW 09:00 - 13:30 => UTC 01:00 - 05:30
+    return timeNum >= 100 && timeNum <= 530;
+  }
+  
+  if (market === 'US') {
+    const usDateStr = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: 'numeric', hour12: false, weekday: 'short' }).format(now);
+    const parts = usDateStr.split(' ');
+    if (parts.length < 2) return false;
+    const weekday = parts[0].replace(',', '');
+    const isUSWeekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].includes(weekday);
+    if (!isUSWeekday) return false;
+    
+    const timeParts = parts[parts.length - 1].split(':');
+    const usHour = parseInt(timeParts[0], 10);
+    const usMin = parseInt(timeParts[1], 10);
+    const usTimeNum = usHour * 100 + usMin;
+    return usTimeNum >= 930 && usTimeNum < 1600;
+  }
+  
+  return false;
+}
+
+function getMarketBadge(market) {
+  const isOpen = getMarketStatus(market);
+  if (isOpen) {
+    return `<span style="font-size: 0.75rem; background: rgba(16,185,129,0.2); color: var(--success-color); padding: 2px 6px; border-radius: 4px; margin-left: 6px; border: 1px solid rgba(16,185,129,0.5); display:inline-flex; align-items:center;"><span class="loading" style="display:inline-block; width:6px; height:6px; background:var(--success-color); border-radius:50%; margin-right:4px; animation: pulse 1.5s infinite;"></span>開盤中</span>`;
+  }
+  return `<span style="font-size: 0.75rem; background: rgba(156,163,175,0.2); color: #9ca3af; padding: 2px 6px; border-radius: 4px; margin-left: 6px; border: 1px solid rgba(156,163,175,0.3); display:inline-flex; align-items:center;">已收盤</span>`;
+}
+
 let currentMarket = 'TW';
 
 function getMarket(symbol) {
@@ -284,7 +328,7 @@ async function renderStockCards() {
           <div class="stock-header">
             <div>
               <div class="stock-symbol"><a href="${linkURL}" target="_blank" style="color: inherit; text-decoration: none;">${stock.symbol}</a></div>
-              <div class="stock-name">${TW_NAMES[stock.symbol] || stock.name}</div>
+              <div class="stock-name" style="display:flex; align-items:center;">${TW_NAMES[stock.symbol] || stock.name} ${getMarketBadge(getMarket(stock.symbol))}</div>
             </div>
             <div class="text-xs px-2 py-1 rounded bg-blue-900/50 text-blue-300 border border-blue-700/50" style="font-size: 0.8rem; padding: 2px 6px; background: rgba(59,130,246,0.2); border-radius: 4px; color: #93c5fd;">
               ${stock.type}
@@ -2585,7 +2629,7 @@ const CATEGORY_MAP = {
                   <div class="stock-header">
                     <div>
                       <div class="stock-symbol"><a href="${linkURL}" target="_blank" style="color: inherit; text-decoration: none;">${stock.symbol}</a></div>
-                      <div class="stock-name">${TW_NAMES[stock.symbol] || stock.name}</div>
+                      <div class="stock-name" style="display:flex; align-items:center;">${TW_NAMES[stock.symbol] || stock.name} ${getMarketBadge(getMarket(stock.symbol))}</div>
                     </div>
                     <div class="text-xs px-2 py-1 rounded bg-blue-900/50 text-blue-300 border border-blue-700/50" style="font-size: 0.8rem; padding: 2px 6px; background: rgba(59,130,246,0.2); border-radius: 4px; color: #93c5fd;">
                       ${stock.type}
@@ -2660,7 +2704,7 @@ const CATEGORY_MAP = {
                 <div class="stock-header">
                   <div>
                     <div class="stock-symbol"><a href="${linkURL}" target="_blank" style="color: inherit; text-decoration: none;">${stock.symbol}</a></div>
-                    <div class="stock-name">${TW_NAMES[stock.symbol] || stock.name}</div>
+                    <div class="stock-name" style="display:flex; align-items:center;">${TW_NAMES[stock.symbol] || stock.name} ${getMarketBadge(getMarket(stock.symbol))}</div>
                   </div>
                   <div class="text-xs px-2 py-1 rounded bg-blue-900/50 text-blue-300 border border-blue-700/50" style="font-size: 0.8rem; padding: 2px 6px; background: rgba(59,130,246,0.2); border-radius: 4px; color: #93c5fd;">
                     ${stock.type}
@@ -2743,7 +2787,7 @@ async function loadMarketOverview() {
         const sign = isPos ? '+' : '';
         html += `
           <div style="display: inline-block; padding: 0 1rem; border-right: 1px solid rgba(255,255,255,0.1);">
-            <div style="font-size: 0.9rem; color: var(--text-secondary);">${idx.name}</div>
+            <div style="font-size: 0.9rem; color: var(--text-secondary); display:flex; align-items:center;">${idx.name} ${getMarketBadge(idxMarket)}</div>
             <div style="font-size: 1.2rem; font-weight: bold; color: ${color};">
               ${live.currentPrice} <span style="font-size: 0.9rem;">${sign}${live.change} (${sign}${live.changePercent}%)</span>
             </div>
