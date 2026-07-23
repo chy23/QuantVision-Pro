@@ -473,7 +473,7 @@ function setupTabs() {
   const searchResultsSection = document.getElementById('search-results-section');
   const searchResultsContainer = document.getElementById('search-results-container');
 
-const TW_NAMES = {
+window.TW_NAMES = {
   "1101": "台泥",
   "1102": "亞泥",
   "1103": "嘉泥",
@@ -2600,20 +2600,10 @@ const CATEGORY_MAP = {
         searchResultsContainer.appendChild(progressDiv);
         
         try {
-          // Calls the rich Yahoo API
-          // Batch fetching for screen
-          const symArray = filtered.map(s => s.symbol);
-          const BATCH_SIZE = 10;
+          const response = await fetchWithRetry(`${API_BASE}/analyze?symbols=${encodeURIComponent(symbolsParam)}`);
           let data = [];
-          for (let i = 0; i < symArray.length; i += BATCH_SIZE) {
-            const batch = symArray.slice(i, i + BATCH_SIZE).join(',');
-            try {
-              const response = await fetchWithRetry(`${API_BASE}/analyze?symbols=${encodeURIComponent(batch)}`);
-              if (response.ok) {
-                const batchData = await response.json();
-                data = data.concat(batchData);
-              }
-            } catch(e) {}
+          if (response.ok) {
+            data = await response.json();
           }
           if (data.length > 0) {
             
