@@ -470,10 +470,16 @@ function renderTableData(dataId, data) {
       }
     }
 
+    let valStr = '-';
+    if (item.eps !== 'N/A' && parseFloat(item.eps) > 0) {
+      valStr = `<span style="font-size: 0.85rem; color: var(--text-secondary);">15 × ${item.eps}</span>`;
+    }
+
     html += `
       <tr style="${rowStyle}">
         <td><strong><a href="${linkURL}" target="_blank" style="color: inherit; text-decoration: underline;">${item.symbol}</a></strong><br/><span style="font-size: 0.85rem; color: var(--text-secondary);">${item.name}</span></td>
         <td><a href="${linkURL}" target="_blank" style="color: inherit; text-decoration: none;">${item.currentPrice}</a></td>
+        <td>${valStr}</td>
         <td style="color: var(--text-primary); font-weight: 600;">${item.buyPrice || '-'}</td>
         <td class="positive" style="font-weight: 600;">${item.targetPrice}</td>
         <td class="negative" style="font-weight: 600;">${item.stopLoss}</td>
