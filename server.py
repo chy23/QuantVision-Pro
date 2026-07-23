@@ -312,15 +312,29 @@ def get_screened_stocks():
             data = future.result()
             if data:
                 cp = data['currentPrice']
-                # Dummy valuation logics for target and stop loss based on fundamental metrics
-                target = cp * 1.20
+                eps_val = data['eps']
+                
+                # Valuation logic
+                try:
+                    eps_float = float(eps_val)
+                    if eps_float > 0:
+                        buy_price = eps_float * 15  # 保守本益比 15 倍
+                        target_price = eps_float * 20 # 合理本益比 20 倍
+                    else:
+                        buy_price = cp * 0.9
+                        target_price = cp * 1.2
+                except (ValueError, TypeError):
+                    buy_price = cp * 0.9
+                    target_price = cp * 1.2
+                    
                 stop_loss = cp * 0.92  # 8% stop loss
                 
                 results.append({
                     "symbol": data['symbol'].replace('.TW', ''),
                     "name": SYMBOL_NAMES.get(data['symbol'], data['symbol']),
                     "currentPrice": f"{cp}",
-                    "targetPrice": f"{round(target, 2)}",
+                    "buyPrice": f"{round(buy_price, 2)}",
+                    "targetPrice": f"{round(target_price, 2)}",
                     "stopLoss": f"{round(stop_loss, 2)}",
                     "pe": data['pe'],
                     "eps": data['eps'],
