@@ -220,10 +220,28 @@ async function renderStockCards() {
   container.innerHTML = '<div style="text-align: center; width: 100%; color: var(--text-secondary);"><span class="loading" style="display:inline-block;">🔄</span> 正在連線雲端引擎獲取動態估值...</div>';
   
   try {
-    const symbols = filteredStocks.map(s => s.symbol).join(',');
-    const response = await fetchWithRetry(`${API_BASE}/analyze?symbols=${encodeURIComponent(symbols)}`);
-    if (!response.ok) throw new Error("API Request Failed");
-    const dynamicDataList = await response.json();
+    // Batch fetching to prevent Render 30s timeout on 50 symbols
+    const symbolsArray = filteredStocks.map(s => s.symbol);
+    const BATCH_SIZE = 10;
+    let dynamicDataList = [];
+    
+    for (let i = 0; i < symbolsArray.length; i += BATCH_SIZE) {
+      const batch = symbolsArray.slice(i, i + BATCH_SIZE).join(',');
+      try {
+        const response = await fetchWithRetry(`${API_BASE}/analyze?symbols=${encodeURIComponent(batch)}`);
+        if (response.ok) {
+          const batchData = await response.json();
+          dynamicDataList = dynamicDataList.concat(batchData);
+        }
+      } catch (err) {
+        console.error("Batch fetch failed:", err);
+        // Continue with other batches even if one fails
+      }
+    }
+    
+    if (dynamicDataList.length === 0) {
+      throw new Error("All batches failed");
+    }
     
     // Convert array to dictionary keyed by symbol
     const dynamicData = {};
@@ -2541,9 +2559,21 @@ const CATEGORY_MAP = {
         
         try {
           // Calls the rich Yahoo API
-          const response = await fetchWithRetry(`${API_BASE}/analyze?symbols=${encodeURIComponent(symbolsParam)}`);
-          if (response.ok) {
-            const data = await response.json();
+          // Batch fetching for screen
+          const symArray = filtered.map(s => s.symbol);
+          const BATCH_SIZE = 10;
+          let data = [];
+          for (let i = 0; i < symArray.length; i += BATCH_SIZE) {
+            const batch = symArray.slice(i, i + BATCH_SIZE).join(',');
+            try {
+              const response = await fetchWithRetry(`${API_BASE}/analyze?symbols=${encodeURIComponent(batch)}`);
+              if (response.ok) {
+                const batchData = await response.json();
+                data = data.concat(batchData);
+              }
+            } catch(e) {}
+          }
+          if (data.length > 0) {
             
             const pDiv = document.getElementById(progressId);
             if (pDiv) pDiv.remove();
