@@ -260,6 +260,7 @@ def fetch_stock_data(symbol, include_history=False):
                 result['roa'] = cached['roa']
                 result['macd'] = cached['macd']
                 result['kd'] = cached['kd']
+                result['industry'] = cached.get('industry', 'N/A')
             else:
                 try:
                     info = ticker.info
@@ -267,12 +268,28 @@ def fetch_stock_data(symbol, include_history=False):
                     result['eps'] = round(info.get('trailingEps', 0), 2) if info.get('trailingEps') else 'N/A'
                     result['roe'] = round(info.get('returnOnEquity', 0) * 100, 2) if info.get('returnOnEquity') else 'N/A'
                     result['roa'] = round(info.get('returnOnAssets', 0) * 100, 2) if info.get('returnOnAssets') else 'N/A'
+                    
+                    # Translate some common English industries
+                    ind = info.get('industry') or info.get('sector') or 'N/A'
+                    trans_dict = {
+                        'Semiconductors': '半導體', 'Consumer Electronics': '消費性電子',
+                        'Software - Infrastructure': '基礎軟體', 'Software - Application': '應用軟體',
+                        'Internet Content & Information': '網路資訊', 'Auto Manufacturers': '汽車製造',
+                        'Banks - Regional': '區域銀行', 'Banks - Diversified': '多元銀行',
+                        'Computer Hardware': '電腦硬體', 'Electronic Components': '電子零組件',
+                        'Marine Shipping': '航運', 'Heavy Electrical Equipment': '重電設備',
+                        'Specialty Retail': '專賣零售', 'Luxury Goods': '奢侈品',
+                        'Biotechnology': '生技', 'Drug Manufacturers - General': '製藥',
+                        'Other Industrial Metals & Mining': '金屬與礦業', 'Oil & Gas Integrated': '整合油氣'
+                    }
+                    result['industry'] = trans_dict.get(ind, ind)
                 except Exception as e:
                     print(f"Info fetch failed for {symbol}: {e}")
                     result['pe'] = 'N/A'
                     result['eps'] = 'N/A'
                     result['roe'] = 'N/A'
                     result['roa'] = 'N/A'
+                    result['industry'] = 'N/A'
                 
                 try:
                     # Fetch 60 days of history for indicators
@@ -294,7 +311,8 @@ def fetch_stock_data(symbol, include_history=False):
                         'roe': result['roe'],
                         'roa': result['roa'],
                         'macd': result['macd'],
-                        'kd': result['kd']
+                        'kd': result['kd'],
+                        'industry': result.get('industry', 'N/A')
                     }
             
         return result
@@ -343,6 +361,7 @@ def get_screened_stocks():
                 results.append({
                     "symbol": data['symbol'].replace('.TW', ''),
                     "name": SYMBOL_NAMES.get(data['symbol'], data['symbol']),
+                    "industry": data.get('industry', 'N/A'),
                     "currentPrice": f"{cp}",
                     "buyPrice": f"{round(buy_price, 2)}",
                     "targetPrice": f"{round(target_price, 2)}",
