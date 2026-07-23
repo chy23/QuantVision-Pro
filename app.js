@@ -2736,8 +2736,8 @@ async function loadMarketOverview() {
 
 // --- Macro Dashboard Logic ---
 async function loadMacroDashboard() {
+  // 1. Load News
   try {
-    // 1. Load News
     const newsRes = await fetchWithRetry(`${API_BASE}/macro-news`);
     if (newsRes.ok) {
       const newsData = await newsRes.json();
@@ -2765,8 +2765,16 @@ async function loadMacroDashboard() {
       renderNews('news-americas-list', newsData.americas);
       renderNews('news-events-list', newsData.events);
     }
-    
-    // 2. Load Advice JSON
+  } catch (err) {
+    console.error("Failed to load macro news:", err);
+    const errHtml = '<div style="color: var(--danger-color);">無法取得新聞，請稍後再試。</div>';
+    document.getElementById('news-asia-list').innerHTML = errHtml;
+    document.getElementById('news-americas-list').innerHTML = errHtml;
+    document.getElementById('news-events-list').innerHTML = errHtml;
+  }
+
+  // 2. Load Advice JSON
+  try {
     const adviceRes = await fetchWithRetry(`${API_BASE}/macro-data`);
     if (adviceRes.ok) {
       const adviceData = await adviceRes.json();
@@ -2786,9 +2794,12 @@ async function loadMacroDashboard() {
         }
       }
     }
-    
   } catch (err) {
-    console.error("Failed to load macro dashboard:", err);
+    console.error("Failed to load macro advice:", err);
+    document.getElementById('macro-last-week').textContent = '無法取得資料';
+    document.getElementById('macro-this-week').textContent = '無法取得資料';
+    document.getElementById('macro-advice').textContent = '無法取得資料';
+    document.getElementById('macro-bull-bear').textContent = '多空：未知';
   }
 }
 
