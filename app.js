@@ -423,6 +423,53 @@ function renderTableData(dataId, data) {
     }
     const rowStyle = isSweet ? 'background: rgba(16, 185, 129, 0.15); border-left: 3px solid var(--success-color);' : '';
     
+    // Calculate colors based on Taiwan stock market bullish (red) / bearish (green) conventions
+    let peColor = 'inherit';
+    if (item.pe !== 'N/A') {
+      const pe = parseFloat(item.pe);
+      if (pe < 15) peColor = 'var(--success-color)';
+      else if (pe > 20) peColor = 'var(--danger-color)';
+    }
+
+    let epsColor = 'inherit';
+    if (item.eps !== 'N/A') {
+      const eps = parseFloat(item.eps);
+      if (eps > 0) epsColor = 'var(--success-color)';
+      else if (eps < 0) epsColor = 'var(--danger-color)';
+    }
+
+    let roeColor = 'inherit';
+    if (item.roe !== 'N/A') {
+      const roe = parseFloat(item.roe);
+      if (roe > 15) roeColor = 'var(--success-color)';
+      else if (roe < 5) roeColor = 'var(--danger-color)';
+    }
+
+    let roaColor = 'inherit';
+    if (item.roa !== 'N/A') {
+      const roa = parseFloat(item.roa);
+      if (roa > 5) roaColor = 'var(--success-color)';
+      else if (roa < 1) roaColor = 'var(--danger-color)';
+    }
+
+    let kdColor = 'inherit';
+    if (item.kd !== 'N/A' && item.kd.includes('/')) {
+      const [k, d] = item.kd.split('/').map(parseFloat);
+      if (!isNaN(k) && !isNaN(d)) {
+        if (k > d) kdColor = 'var(--success-color)';
+        else if (k < d) kdColor = 'var(--danger-color)';
+      }
+    }
+
+    let macdColor = 'inherit';
+    if (item.macd !== 'N/A' && item.macd.includes('/')) {
+      const [m, s] = item.macd.split('/').map(parseFloat);
+      if (!isNaN(m) && !isNaN(s)) {
+        if (m > s) macdColor = 'var(--success-color)';
+        else if (m < s) macdColor = 'var(--danger-color)';
+      }
+    }
+
     html += `
       <tr style="${rowStyle}">
         <td><strong><a href="${linkURL}" target="_blank" style="color: inherit; text-decoration: underline;">${item.symbol}</a></strong><br/><span style="font-size: 0.85rem; color: var(--text-secondary);">${item.name}</span></td>
@@ -430,12 +477,12 @@ function renderTableData(dataId, data) {
         <td style="color: var(--text-primary); font-weight: 600;">${item.buyPrice || '-'}</td>
         <td class="positive" style="font-weight: 600;">${item.targetPrice}</td>
         <td class="negative" style="font-weight: 600;">${item.stopLoss}</td>
-        <td style="color: ${item.pe !== 'N/A' && item.pe < 20 ? 'var(--success-color)' : 'inherit'};">${item.pe}</td>
-        <td>${item.eps}</td>
-        <td style="color: ${item.roe !== 'N/A' && parseFloat(item.roe) > 15 ? 'var(--success-color)' : 'inherit'};">${item.roe}</td>
-        <td>${item.roa}</td>
-        <td>${item.kd}</td>
-        <td>${item.macd}</td>
+        <td style="color: ${peColor};">${item.pe}</td>
+        <td style="color: ${epsColor};">${item.eps}</td>
+        <td style="color: ${roeColor};">${item.roe}</td>
+        <td style="color: ${roaColor};">${item.roa}</td>
+        <td style="color: ${kdColor};">${item.kd}</td>
+        <td style="color: ${macdColor};">${item.macd}</td>
         <td style="font-size: 0.85rem; color: var(--text-secondary);">${item.reason}</td>
       </tr>
     `;
@@ -2904,7 +2951,7 @@ async function loadMacroDashboard() {
           vixVal.style.color = '#10b981';
           desc = '恐慌程度低，市場情緒穩定，適合順勢操作，但留意居高思危 📈';
         } else {
-          vixVal.style.color = '#f59e0b';
+          vixVal.style.color = '#ffffff';
           desc = '市場情緒中性，未見極端恐慌，建議依個股基本面區間操作 ⚖️';
         }
         if (vixDesc) vixDesc.innerText = desc;
@@ -2930,8 +2977,8 @@ async function loadMacroDashboard() {
         ratingText = trans[ratingText.toLowerCase()] || ratingText;
         greedRating.innerText = ratingText;
         
-        let color = 'white';
-        let bg = 'transparent';
+        let color = '#ffffff';
+        let bg = 'rgba(255,255,255,0.1)';
         let desc = '';
         if (fgData.greed_score < 25) { 
           color = '#ef4444'; bg = 'rgba(239,68,68,0.2)'; 
@@ -2940,7 +2987,7 @@ async function loadMacroDashboard() {
           color = '#f87171'; bg = 'rgba(248,113,113,0.2)'; 
           desc = '市場情緒偏空，資金相對保守，建議可以開始分批往下承接優質股 📉';
         } else if (fgData.greed_score < 55) { 
-          color = '#f59e0b'; bg = 'rgba(245,158,11,0.2)'; 
+          color = '#ffffff'; bg = 'rgba(255,255,255,0.1)'; 
           desc = '市場情緒中立，沒有明顯的多空方向，建議以個股題材各自表現為主 ⚖️';
         } else if (fgData.greed_score < 75) { 
           color = '#34d399'; bg = 'rgba(52,211,153,0.2)'; 
