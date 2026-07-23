@@ -2869,16 +2869,29 @@ async function loadMacroDashboard() {
       const fgData = await fgRes.json();
       
       const vixVal = document.getElementById('macro-vix-val');
+      const vixDesc = document.getElementById('macro-vix-desc');
       if (fgData.vix !== 'N/A') {
         vixVal.innerText = fgData.vix;
-        // VIX > 30 usually means high fear
-        vixVal.style.color = fgData.vix > 30 ? '#ef4444' : (fgData.vix < 20 ? '#10b981' : '#f59e0b');
+        let desc = '';
+        if (fgData.vix > 30) {
+          vixVal.style.color = '#ef4444';
+          desc = '恐慌程度極高，市場極易超跌，通常是尋找錯殺優質股的絕佳買點 📉';
+        } else if (fgData.vix < 20) {
+          vixVal.style.color = '#10b981';
+          desc = '恐慌程度低，市場情緒穩定，適合順勢操作，但留意居高思危 📈';
+        } else {
+          vixVal.style.color = '#f59e0b';
+          desc = '市場情緒中性，未見極端恐慌，建議依個股基本面區間操作 ⚖️';
+        }
+        if (vixDesc) vixDesc.innerText = desc;
       } else {
         vixVal.innerText = '暫無';
+        if (vixDesc) vixDesc.innerText = '';
       }
 
       const greedVal = document.getElementById('macro-greed-val');
       const greedRating = document.getElementById('macro-greed-rating');
+      const greedDesc = document.getElementById('macro-greed-desc');
       if (fgData.greed_score !== 'N/A') {
         greedVal.innerText = fgData.greed_score;
         let ratingText = fgData.greed_rating;
@@ -2895,18 +2908,32 @@ async function loadMacroDashboard() {
         
         let color = 'white';
         let bg = 'transparent';
-        if (fgData.greed_score < 25) { color = '#ef4444'; bg = 'rgba(239,68,68,0.2)'; }
-        else if (fgData.greed_score < 45) { color = '#f87171'; bg = 'rgba(248,113,113,0.2)'; }
-        else if (fgData.greed_score < 55) { color = '#f59e0b'; bg = 'rgba(245,158,11,0.2)'; }
-        else if (fgData.greed_score < 75) { color = '#34d399'; bg = 'rgba(52,211,153,0.2)'; }
-        else { color = '#10b981'; bg = 'rgba(16,185,129,0.2)'; }
+        let desc = '';
+        if (fgData.greed_score < 25) { 
+          color = '#ef4444'; bg = 'rgba(239,68,68,0.2)'; 
+          desc = '市場極度悲觀，散戶恐慌拋售，通常是中長線投資者的絕佳買入時機 🛒';
+        } else if (fgData.greed_score < 45) { 
+          color = '#f87171'; bg = 'rgba(248,113,113,0.2)'; 
+          desc = '市場情緒偏空，資金相對保守，建議可以開始分批往下承接優質股 📉';
+        } else if (fgData.greed_score < 55) { 
+          color = '#f59e0b'; bg = 'rgba(245,158,11,0.2)'; 
+          desc = '市場情緒中立，沒有明顯的多空方向，建議以個股題材各自表現為主 ⚖️';
+        } else if (fgData.greed_score < 75) { 
+          color = '#34d399'; bg = 'rgba(52,211,153,0.2)'; 
+          desc = '市場情緒偏向樂觀，買氣回籠，適合抱牢獲利部位，但不建議過度追高 📈';
+        } else { 
+          color = '#10b981'; bg = 'rgba(16,185,129,0.2)'; 
+          desc = '市場極度狂熱，散戶瘋狂湧入，隨時有過熱回檔風險，建議適度減碼獲利了結（賣出訊號） 💰';
+        }
         
         greedVal.style.color = color;
         greedRating.style.color = color;
         greedRating.style.background = bg;
+        if (greedDesc) greedDesc.innerText = desc;
       } else {
         greedVal.innerText = '暫無';
         greedRating.innerText = '--';
+        if (greedDesc) greedDesc.innerText = '';
       }
     }
   } catch (err) {
