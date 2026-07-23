@@ -592,10 +592,31 @@ function setupTabs() {
       const catFilter = document.getElementById('category-filter');
       const searchRes = document.getElementById('search-results-section');
       const searchResContainer = document.getElementById('search-results-container');
+      
       if (catFilter) {
-          catFilter.style.display = currentMarket === 'TW' ? 'inline-block' : 'none';
+          catFilter.style.display = 'inline-block';
+          
+          let mapToUse;
+          let defaultText;
+          if (currentMarket === 'US') {
+              mapToUse = US_CATEGORY_MAP;
+              defaultText = '選擇美股類別...';
+          } else if (currentMarket === 'OTHER') {
+              mapToUse = OTHER_CATEGORY_MAP;
+              defaultText = '選擇其他市場類別...';
+          } else {
+              mapToUse = CATEGORY_MAP;
+              defaultText = '選擇台股類別...';
+          }
+          
+          let optionsHtml = `<option value="">${defaultText}</option>`;
+          for (const key in mapToUse) {
+              optionsHtml += `<option value="${key}">${key}</option>`;
+          }
+          catFilter.innerHTML = optionsHtml;
           catFilter.value = ''; // Reset selection
       }
+      
       if (searchRes) {
           searchRes.style.display = 'none';
       }
@@ -1723,6 +1744,23 @@ window.TW_NAMES = {
   "9958": "世紀鋼"
 };
 
+const US_CATEGORY_MAP = {
+  "科技巨頭 (Big Tech)": ["AAPL", "MSFT", "GOOGL", "AMZN", "META"],
+  "半導體 (Semiconductors)": ["NVDA", "AMD", "TSM", "AVGO", "INTC", "QCOM", "ASML", "MU", "TXN", "AMAT"],
+  "電動車與能源 (EV & Energy)": ["TSLA", "XOM", "CVX"],
+  "金融與支付 (Financials)": ["JPM", "BAC", "V", "MA", "AXP"],
+  "醫療生技 (Healthcare)": ["UNH", "JNJ", "LLY", "ABBV", "MRK", "PFE"],
+  "消費品 (Consumer)": ["WMT", "PG", "KO", "PEP", "COST", "MCD", "NKE"],
+  "工業與軍工 (Industrials)": ["BA", "CAT", "LMT", "RTX", "HON"]
+};
+
+const OTHER_CATEGORY_MAP = {
+  "歐洲巨頭": ["ASML", "MC.PA", "NOVO-B.CO", "SAP.DE", "SIE.DE", "OR.PA"],
+  "日本指標": ["7203.T", "9984.T", "6758.T", "8035.T", "6861.T", "9983.T"],
+  "中港龍頭": ["0700.HK", "9988.HK", "1299.HK", "0941.HK", "3690.HK", "0005.HK"],
+  "資源礦業": ["BHP.AX", "RIO.L", "VALE"]
+};
+
 const CATEGORY_MAP = {
   "水泥工業": [
     "1101",
@@ -2735,7 +2773,10 @@ const CATEGORY_MAP = {
     searchResultsContainer.innerHTML = '<div style="color: var(--text-secondary); grid-column: 1 / -1; text-align: center;">準備分批載入全市場深度資料...</div>';
     
     try {
-      const symbolsList = CATEGORY_MAP[category];
+      let mapToUse = CATEGORY_MAP;
+      if (currentMarket === 'US') mapToUse = US_CATEGORY_MAP;
+      else if (currentMarket === 'OTHER') mapToUse = OTHER_CATEGORY_MAP;
+      const symbolsList = mapToUse[category];
       if (!symbolsList || symbolsList.length === 0) {
         searchResultsContainer.innerHTML = '<div style="color: white; grid-column: 1/-1; text-align: center;">找不到此類別的資料。</div>';
         return;
