@@ -2779,6 +2779,7 @@ async function loadMarketOverview() {
     
     let html = '';
     indices.forEach(idx => {
+      const idxMarket = idx.symbol.includes('TW') ? 'TW' : 'US';
       // Find data for this index
       let live = data.find(d => d.symbol === idx.symbol || d.symbol === idx.symbol.replace('.TW', ''));
       if (live && live.currentPrice !== 'N/A' && live.currentPrice !== '0.0') {

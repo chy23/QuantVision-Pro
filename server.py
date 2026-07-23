@@ -122,6 +122,50 @@ def calculate_technicals(df):
     
     return f"MACD:{macd_val}/Sig:{sig_val}", f"K:{k_val}/D:{d_val}"
 
+
+def scrape_google_finance(symbol):
+    try:
+        # Map symbol for Google Finance
+        # AAPL -> NASDAQ:AAPL or NYSE:..., TW stocks: TPE:2330
+        gf_symbol = symbol.replace('.TW', '')
+        if symbol.endswith('.TW'):
+            gf_symbol = f"TPE:{gf_symbol}"
+            
+        url = f"https://www.google.com/finance/quote/{gf_symbol}"
+        r = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=5)
+        soup = BeautifulSoup(r.text, 'html.parser')
+        
+        # Google Finance price class: YmWhbc
+        price_div = soup.find('div', class_='YMlKec fxKbKc')
+        if not price_div:
+            return None
+        price_str = price_div.text.replace(',', '').replace('$', '').replace('NT', '')
+        
+        # Change class: P2Luy
+        change_div = soup.find('div', class_='P2Luy')
+        if not change_div:
+            return None
+        # It usually contains something like "+$1.23 (0.45%)" or similar
+        change_text = change_div.text
+        
+        is_down = change_text.startswith('-')
+        parts = change_text.split('(')
+        change_val_str = parts[0].replace('$', '').replace('NT', '').replace('+', '').replace('-', '').strip()
+        change_pct_str = parts[1].replace(')', '').replace('%', '').replace('+', '').replace('-', '').strip() if len(parts) > 1 else '0'
+        
+        last_price = float(price_str)
+        change = float(change_val_str)
+        if is_down:
+            change = -change
+        change_percent = float(change_pct_str)
+        if is_down:
+            change_percent = -change_percent
+            
+        return last_price, change, change_percent
+    except Exception as e:
+        print(f"Google Finance scrape failed for {symbol}: {e}")
+        return None
+
 def scrape_tw_stock_realtime(symbol):
     try:
         tw_symbol = symbol.replace('.TW', '')
@@ -161,19 +205,32 @@ CACHE_TTL = 21600  # 6 hours
 def fetch_stock_data(symbol, include_history=False):
     try:
         ticker = yf.Ticker(symbol)
+        last_price, change, change_percent = None, None, None
         
-        # Default to yfinance
-        data = ticker.fast_info
-        last_price = data.last_price
-        prev_close = data.previous_close
-        change = last_price - prev_close
-        change_percent = (change / prev_close) * 100 if prev_close else 0
-        
-        # Override with real-time scrape for TW stocks during intraday
+        # 1. Try Yahoo Finance HTML for TW stocks first to save yfinance API limits
         if symbol.endswith('.TW'):
             scraped = scrape_tw_stock_realtime(symbol)
             if scraped:
                 last_price, change, change_percent = scraped
+        
+        # 2. Try yfinance API if no data yet
+        if last_price is None:
+            try:
+                data = ticker.fast_info
+                last_price = float(data.last_price)
+                prev_close = float(data.previous_close)
+                change = last_price - prev_close
+                change_percent = (change / prev_close) * 100 if prev_close else 0
+            except Exception as e:
+                print(f"yfinance fast_info failed for {symbol}: {e}")
+        
+        # 3. Try Google Finance as ultimate fallback
+        if last_price is None:
+            gf = scrape_google_finance(symbol)
+            if gf:
+                last_price, change, change_percent = gf
+            else:
+                raise Exception("All price sources failed")
         
         result = {
             "symbol": symbol,
