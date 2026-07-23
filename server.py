@@ -1570,6 +1570,50 @@ def analyze_stocks():
                 
     return jsonify(results)
 
+
+import xml.etree.ElementTree as ET
+
+@app.route('/api/macro-news', methods=['GET'])
+def get_macro_news():
+    news_feeds = {
+        "americas": "https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=en-US&gl=US&ceid=US:en",
+        "asia": "https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=zh-TW&gl=TW&ceid=TW:zh-Hant",
+        "events": "https://news.google.com/rss/search?q=Economy+Events+OR+Federal+Reserve&hl=en-US&gl=US&ceid=US:en"
+    }
+    
+    results = {}
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    
+    for category, url in news_feeds.items():
+        try:
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req, context=ctx, timeout=5) as resp:
+                xml_data = resp.read()
+                root = ET.fromstring(xml_data)
+                items = []
+                for item in root.findall('./channel/item')[:5]: # Top 5 news
+                    title = item.find('title').text if item.find('title') is not None else ''
+                    link = item.find('link').text if item.find('link') is not None else ''
+                    pubDate = item.find('pubDate').text if item.find('pubDate') is not None else ''
+                    items.append({"title": title, "link": link, "date": pubDate})
+                results[category] = items
+        except Exception as e:
+            print(f"Error fetching {category} news: {e}")
+            results[category] = []
+            
+    return jsonify(results)
+
+@app.route('/api/macro-data', methods=['GET'])
+def get_macro_data():
+    try:
+        with open('macro_data.json', 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5002))
     app.run(host='0.0.0.0', port=port, debug=False, threaded=True)

@@ -2672,6 +2672,9 @@ const CATEGORY_MAP = {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  setupMacroTabs();
+  loadMacroDashboard();
+
   loadMarketOverview();
   renderStockCards();
   loadRecommendations();
@@ -2728,4 +2731,88 @@ async function loadMarketOverview() {
     console.error("Market overview error:", err);
     tickerContainer.innerHTML = '<div style="color: var(--danger-color); width: 100%; text-align: center;">無法連線伺服器取得大盤資料</div>';
   }
+}
+
+
+// --- Macro Dashboard Logic ---
+async function loadMacroDashboard() {
+  try {
+    // 1. Load News
+    const newsRes = await fetchWithRetry(`${API_BASE}/macro-news`);
+    if (newsRes.ok) {
+      const newsData = await newsRes.json();
+      
+      const renderNews = (containerId, items) => {
+        const el = document.getElementById(containerId);
+        if (!el) return;
+        if (!items || items.length === 0) {
+          el.innerHTML = '<div style="color: var(--text-secondary);">暫無新聞資料</div>';
+          return;
+        }
+        let html = '';
+        items.forEach(item => {
+          html += `
+            <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; border-left: 3px solid rgba(255,255,255,0.2);">
+              <a href="${item.link}" target="_blank" style="color: var(--text-primary); text-decoration: none; font-weight: bold; display: block; margin-bottom: 0.5rem;">${item.title}</a>
+              <div style="color: var(--text-secondary); font-size: 0.8rem;">${item.date}</div>
+            </div>
+          `;
+        });
+        el.innerHTML = html;
+      };
+      
+      renderNews('news-asia-list', newsData.asia);
+      renderNews('news-americas-list', newsData.americas);
+      renderNews('news-events-list', newsData.events);
+    }
+    
+    // 2. Load Advice JSON
+    const adviceRes = await fetchWithRetry(`${API_BASE}/macro-data`);
+    if (adviceRes.ok) {
+      const adviceData = await adviceRes.json();
+      document.getElementById('macro-last-week').textContent = adviceData.lastWeek || '暫無資料';
+      document.getElementById('macro-this-week').textContent = adviceData.thisWeek || '暫無資料';
+      document.getElementById('macro-advice').textContent = adviceData.advice || '暫無資料';
+      
+      const bullBear = document.getElementById('macro-bull-bear');
+      if (adviceData.bullBear) {
+        bullBear.textContent = `多空：${adviceData.bullBear}`;
+        if (adviceData.bullBear.includes('多') || adviceData.bullBear.toLowerCase().includes('bull')) {
+          bullBear.style.background = 'rgba(16, 185, 129, 0.2)';
+          bullBear.style.color = 'var(--success-color)';
+        } else if (adviceData.bullBear.includes('空') || adviceData.bullBear.toLowerCase().includes('bear')) {
+          bullBear.style.background = 'rgba(239, 68, 68, 0.2)';
+          bullBear.style.color = 'var(--danger-color)';
+        }
+      }
+    }
+    
+  } catch (err) {
+    console.error("Failed to load macro dashboard:", err);
+  }
+}
+
+// Macro Tab Switching Logic
+function setupMacroTabs() {
+  const tabs = [
+    { btnId: 'macro-tab-advice', contentId: 'macro-content-advice' },
+    { btnId: 'macro-tab-asia', contentId: 'macro-content-asia' },
+    { btnId: 'macro-tab-americas', contentId: 'macro-content-americas' },
+    { btnId: 'macro-tab-events', contentId: 'macro-content-events' }
+  ];
+  
+  tabs.forEach(tab => {
+    const btn = document.getElementById(tab.btnId);
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+      // Deactivate all
+      tabs.forEach(t => {
+        document.getElementById(t.btnId).classList.remove('active');
+        document.getElementById(t.contentId).style.display = 'none';
+      });
+      // Activate clicked
+      btn.classList.add('active');
+      document.getElementById(tab.contentId).style.display = 'block';
+    });
+  });
 }
