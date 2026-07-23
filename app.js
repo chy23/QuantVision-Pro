@@ -275,7 +275,7 @@ function getMarketBadge(market) {
 let currentMarket = 'TW';
 
 function getMarket(symbol) {
-  if (symbol.endsWith('.TW')) return 'TW';
+  if (symbol.endsWith('.TW') || symbol.match(/^\d+$/)) return 'TW';
   if (symbol === 'ASML' || (symbol.includes('.') && !symbol.endsWith('.TW'))) return 'OTHER';
   return 'US';
 }
