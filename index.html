@@ -78,12 +78,40 @@
               <h3 style="margin-bottom: 1rem; color: var(--text-primary);"><span style="color: var(--success-color);">本週展望</span></h3>
               <p id="macro-this-week" style="color: var(--text-secondary); line-height: 1.6;">載入中...</p>
             </div>
-            <div style="background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 8px; border-left: 4px solid #f59e0b; grid-column: 1 / -1;">
-              <h3 style="margin-bottom: 1rem; color: var(--text-primary);"><span style="color: #f59e0b;">經濟走向與投資建議</span></h3>
-              <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
-                <span style="background: rgba(245, 158, 11, 0.2); color: #f59e0b; padding: 4px 12px; border-radius: 4px; font-weight: bold;" id="macro-bull-bear">多空：載入中...</span>
+            <div style="grid-column: 1 / -1; display: flex; gap: 1.5rem; flex-wrap: wrap;">
+              <!-- 恐慌指數 -->
+              <div style="flex: 1; min-width: 200px; background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 8px; border-left: 4px solid #ef4444; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+                <h4 style="color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 1rem;">恐慌指數 (VIX)</h4>
+                <div id="macro-vix-val" style="font-size: 2.5rem; font-weight: bold; color: white;">--</div>
               </div>
-              <p id="macro-advice" style="color: var(--text-secondary); line-height: 1.6; font-size: 1.05rem;">載入中...</p>
+              <!-- 貪婪指數 -->
+              <div style="flex: 1; min-width: 200px; background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 8px; border-left: 4px solid #3b82f6; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+                <h4 style="color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 1rem;">CNN 恐懼與貪婪指數</h4>
+                <div id="macro-greed-val" style="font-size: 2.5rem; font-weight: bold; color: white;">--</div>
+                <div id="macro-greed-rating" style="margin-top: 0.5rem; font-size: 1rem; font-weight: bold; padding: 2px 10px; border-radius: 4px;">--</div>
+              </div>
+            </div>
+
+            <div style="background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 8px; border-left: 4px solid #f59e0b; grid-column: 1 / -1;">
+              <h3 style="margin-bottom: 1.5rem; color: var(--text-primary);"><span style="color: #f59e0b;">經濟走向與投資建議</span></h3>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem;">
+                <!-- 台灣市場 -->
+                <div>
+                  <h4 style="color: var(--text-primary); margin-bottom: 0.8rem; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
+                    🇹🇼 台灣市場
+                    <span style="background: rgba(245, 158, 11, 0.2); color: #f59e0b; padding: 2px 8px; border-radius: 4px; font-size: 0.85rem;" id="macro-bull-bear-tw">多空：--</span>
+                  </h4>
+                  <p id="macro-advice-tw" style="color: var(--text-secondary); line-height: 1.6; font-size: 1rem;">載入中...</p>
+                </div>
+                <!-- 美國市場 -->
+                <div>
+                  <h4 style="color: var(--text-primary); margin-bottom: 0.8rem; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
+                    🇺🇸 美國市場
+                    <span style="background: rgba(245, 158, 11, 0.2); color: #f59e0b; padding: 2px 8px; border-radius: 4px; font-size: 0.85rem;" id="macro-bull-bear-us">多空：--</span>
+                  </h4>
+                  <p id="macro-advice-us" style="color: var(--text-secondary); line-height: 1.6; font-size: 1rem;">載入中...</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>

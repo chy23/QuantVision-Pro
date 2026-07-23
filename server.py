@@ -1662,6 +1662,40 @@ def get_macro_news():
             
     return jsonify(results)
 
+
+@app.route('/api/macro-fear-greed', methods=['GET'])
+def get_macro_fear_greed():
+    result = {"vix": "N/A", "greed_score": "N/A", "greed_rating": "N/A"}
+    
+    # 1. Fetch VIX from yfinance
+    try:
+        vix_ticker = yf.Ticker('^VIX')
+        vix_price = vix_ticker.fast_info.last_price
+        result["vix"] = round(vix_price, 2)
+    except Exception as e:
+        print("Error fetching VIX:", e)
+        
+    # 2. Fetch CNN Fear & Greed Index
+    try:
+        url = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+            "Accept": "application/json",
+            "Referer": "https://edition.cnn.com/"
+        }
+        r = requests.get(url, headers=headers, timeout=5)
+        if r.status_code == 200:
+            data = r.json()
+            fg = data.get("fear_and_greed", {})
+            if "score" in fg:
+                result["greed_score"] = round(fg["score"], 1)
+            if "rating" in fg:
+                result["greed_rating"] = fg["rating"]
+    except Exception as e:
+        print("Error fetching Fear & Greed:", e)
+        
+    return jsonify(result)
+
 @app.route('/api/macro-data', methods=['GET'])
 def get_macro_data():
     try:
