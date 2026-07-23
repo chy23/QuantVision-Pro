@@ -251,6 +251,13 @@ async function fetchScreenedStocks() {
   }
 }
 
+const extractNumber = (str) => {
+  if (typeof str === 'number') return str;
+  if (!str) return NaN;
+  const match = String(str).replace(/,/g, '').match(/[\d.]+/);
+  return match ? parseFloat(match[0]) : NaN;
+};
+
 async function renderStockCards() {
   const container = document.getElementById('core-stocks-container');
   
@@ -321,8 +328,21 @@ async function renderStockCards() {
         logic = stock.logic;
       }
 
+      let isSweet = false;
+      if (live && live.currentPrice !== 'N/A') {
+        const cp = extractNumber(live.currentPrice);
+        const sp = extractNumber(sweetSpot);
+        if (!isNaN(cp) && !isNaN(sp) && cp <= sp) {
+          isSweet = true;
+        }
+      }
+
+      const highlightStyle = isSweet ? 'border: 2px solid var(--success-color); box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);' : '';
+      const badgeHTML = isSweet ? '<div style="position: absolute; top: -12px; right: -12px; background: var(--success-color); color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,0.4); z-index: 10;">🔥 達估值甜蜜點</div>' : '';
+
       html += `
-        <div class="glass-panel stock-card fade-in">
+        <div class="glass-panel stock-card fade-in" style="position: relative; ${highlightStyle}">
+          ${badgeHTML}
           <div class="stock-header">
             <div>
               <div class="stock-symbol"><a href="${linkURL}" target="_blank" style="color: inherit; text-decoration: none;">${stock.symbol}</a></div>
@@ -403,8 +423,19 @@ function renderTableData(dataId, data) {
   
   data.forEach(item => {
     const linkURL = getMarket(item.symbol) === 'TW' ? `https://tw.stock.yahoo.com/quote/${item.symbol}` : `https://finance.yahoo.com/quote/${item.symbol}`;
+    
+    let isSweet = false;
+    if (item.currentPrice !== 'N/A') {
+      const cp = extractNumber(item.currentPrice);
+      const tp = extractNumber(item.targetPrice);
+      if (!isNaN(cp) && !isNaN(tp) && cp <= tp) {
+        isSweet = true;
+      }
+    }
+    const rowStyle = isSweet ? 'background: rgba(16, 185, 129, 0.15); border-left: 3px solid var(--success-color);' : '';
+    
     html += `
-      <tr>
+      <tr style="${rowStyle}">
         <td><strong><a href="${linkURL}" target="_blank" style="color: inherit; text-decoration: underline;">${item.symbol}</a></strong><br/><span style="font-size: 0.85rem; color: var(--text-secondary);">${item.name}</span></td>
         <td><a href="${linkURL}" target="_blank" style="color: inherit; text-decoration: none;">${item.currentPrice}</a></td>
         <td class="positive" style="font-weight: 600;">${item.targetPrice}</td>
@@ -2612,8 +2643,21 @@ const CATEGORY_MAP = {
             
             data.forEach(stock => {
               const linkURL = stock.symbol.match(/^\d+/) ? `https://tw.stock.yahoo.com/quote/${stock.symbol}` : `https://finance.yahoo.com/quote/${stock.symbol}`;
+              let isSweet = false;
+              if (stock.currentPrice !== 'N/A') {
+                const cp = extractNumber(stock.currentPrice);
+                const sp = extractNumber(stock.sweetSpot);
+                if (!isNaN(cp) && !isNaN(sp) && cp <= sp) {
+                  isSweet = true;
+                }
+              }
+
+              const highlightStyle = isSweet ? 'border: 2px solid var(--success-color); box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);' : '';
+              const badgeHTML = isSweet ? '<div style="position: absolute; top: -12px; right: -12px; background: var(--success-color); color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,0.4); z-index: 10;">🔥 達估值甜蜜點</div>' : '';
+
               const html = `
-                <div class="glass-panel stock-card fade-in">
+                <div class="glass-panel stock-card fade-in" style="position: relative; ${highlightStyle}">
+                  ${badgeHTML}
                   <div class="stock-header">
                     <div>
                       <div class="stock-symbol"><a href="${linkURL}" target="_blank" style="color: inherit; text-decoration: none;">${stock.symbol}</a></div>
