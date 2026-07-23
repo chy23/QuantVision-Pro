@@ -143,11 +143,61 @@ const coreStocks = [
     symbol: "7203.T",
     name: "豐田汽車 (Toyota)",
     type: "其他/價值型",
-    eps: "385 日圓 (預估)",
+    eps: "N/A",
     efficiency: "ROE 11% (全球車廠龍頭)",
     valuationAnchor: "預估 P/E < 8 倍",
-    sweetSpot: "3080 日圓以下",
+    sweetSpot: "估值偏低區間",
     logic: "傳統車廠估值偏低，日圓貶值受惠股。P/E跌破8倍且配息率達4%時，提供絕佳防禦與價值保護。"
+  },
+  {
+    symbol: "9984.T",
+    name: "軟銀 (SoftBank)",
+    type: "其他/控股",
+    eps: "N/A",
+    efficiency: "全球科技投資巨頭",
+    valuationAnchor: "股價淨值比 < 1 倍",
+    sweetSpot: "淨值大幅折價區",
+    logic: "AI投資控股公司，持股ARM具爆發潛力。當股價大幅低於每股淨資產時具投資吸引力。"
+  },
+  {
+    symbol: "0700.HK",
+    name: "騰訊 (Tencent)",
+    type: "其他/網路科技",
+    eps: "N/A",
+    efficiency: "ROE 20% (強大現金流)",
+    valuationAnchor: "預估 P/E < 15 倍",
+    sweetSpot: "本益比低緣",
+    logic: "中國社群與遊戲霸主。受政策干擾跌至歷史低估值時，是長線佈局優質資產的良機。"
+  },
+  {
+    symbol: "9988.HK",
+    name: "阿里巴巴 (Alibaba)",
+    type: "其他/電商",
+    eps: "N/A",
+    efficiency: "電商與雲端雙引擎",
+    valuationAnchor: "預估 P/E < 12 倍",
+    sweetSpot: "超跌價值區",
+    logic: "龐大用戶基數與雲端市佔，股價受非基本面因素過度打壓時具備深度價值投資機會。"
+  },
+  {
+    symbol: "MC.PA",
+    name: "路易威登 (LVMH)",
+    type: "其他/奢侈品",
+    eps: "N/A",
+    efficiency: "高毛利與定價權",
+    valuationAnchor: "預估 P/E < 20 倍",
+    sweetSpot: "景氣悲觀期",
+    logic: "全球精品龍頭，無可取代的品牌護城河。在總體經濟悲觀導致本益比下修時買進最佳。"
+  },
+  {
+    symbol: "NOVO-B.CO",
+    name: "諾和諾德 (Novo Nordisk)",
+    type: "其他/生技",
+    eps: "N/A",
+    efficiency: "減肥藥全球霸主",
+    valuationAnchor: "預估 P/E < 35 倍",
+    sweetSpot: "合理成長區間",
+    logic: "掌握全球減肥藥與糖尿病龐大剛需，具備極強成長動能。趁大盤回檔時介入長線持有。"
   }
 ];
 
@@ -537,6 +587,22 @@ function setupTabs() {
       btn.classList.add('active');
       
       currentMarket = btn.dataset.market;
+      
+      // Update UI for search features based on market
+      const catFilter = document.getElementById('category-filter');
+      const searchRes = document.getElementById('search-results-section');
+      const searchResContainer = document.getElementById('search-results-container');
+      if (catFilter) {
+          catFilter.style.display = currentMarket === 'TW' ? 'inline-block' : 'none';
+          catFilter.value = ''; // Reset selection
+      }
+      if (searchRes) {
+          searchRes.style.display = 'none';
+      }
+      if (searchResContainer) {
+          searchResContainer.innerHTML = '';
+      }
+      
       // Re-render data without re-fetching
       renderStockCards();
       loadRecommendations();
