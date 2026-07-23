@@ -1609,21 +1609,29 @@ def analyze_stocks():
                 cp = data['currentPrice']
                 pe = data['pe']
                 
-                if isinstance(pe, (int, float)) and pe > 0:
-                    target = cp * 1.15
-                    sweet_spot = cp * 0.9
-                    anchor = f"預估 P/E < {round(pe * 0.9, 1)} 倍"
+                try:
+                    eps_float = float(data['eps'])
+                except (ValueError, TypeError, KeyError):
+                    eps_float = 0
                     
-                    if pe > 40:
-                        logic = f"目前本益比偏高 ({pe}倍)，建議等回檔至 {round(sweet_spot, 2)} 以下再介入，風險較低。"
-                    elif pe < 15:
-                        logic = f"目前本益比偏低 ({pe}倍)，具備價值投資潛力。若基本面無惡化，低於 {round(sweet_spot, 2)} 是不錯的買點。"
+                if eps_float > 0:
+                    sweet_spot = eps_float * 15 # 15倍本益比
+                    anchor = "預估 P/E < 15 倍"
+                    if cp <= sweet_spot:
+                        logic = f"目前股價已低於保守估值 {round(sweet_spot, 2)}，具備價值投資潛力。"
                     else:
-                        logic = f"本益比 {pe} 倍位於合理區間。可觀察均線支撐，建議在 {round(sweet_spot, 2)} 附近分批佈局。"
+                        logic = f"基本面良好，但目前本益比偏高，建議等回檔至保守估值 {round(sweet_spot, 2)} 以下再介入。"
+                elif isinstance(pe, (int, float)) and pe > 0:
+                    sweet_spot = cp * (15 / pe) if pe > 15 else cp
+                    anchor = "預估 P/E < 15 倍"
+                    if cp <= sweet_spot:
+                        logic = f"目前本益比偏低 ({pe}倍)，具備價值投資潛力。"
+                    else:
+                        logic = f"目前本益比 ({pe}倍) 偏高，建議等回檔至 {round(sweet_spot, 2)} 以下。"
                 else:
                     sweet_spot = cp * 0.95
                     anchor = "技術面支撐"
-                    logic = f"暫無有效本益比資訊。建議以技術面(MACD/KD)作為進出依據，停損設 {round(sweet_spot, 2)}。"
+                    logic = f"無有效基本面資訊。建議以技術面作為進出依據，設定 {round(sweet_spot, 2)} 為觀察點。"
 
                 results.append({
                     "symbol": data['symbol'].replace('.TW', ''),
