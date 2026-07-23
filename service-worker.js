@@ -1,4 +1,4 @@
-const CACHE_NAME = 'stock-analyzer-v14';
+const CACHE_NAME = 'stock-analyzer-v16';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

@@ -2850,29 +2850,67 @@ async function loadMacroDashboard() {
   try {
     const adviceRes = await fetchWithRetry(`${API_BASE}/macro-data`);
     if (adviceRes.ok) {
-      const adviceData = await adviceRes.json();
-      document.getElementById('macro-last-week').textContent = adviceData.lastWeek || '暫無資料';
-      document.getElementById('macro-this-week').textContent = adviceData.thisWeek || '暫無資料';
-      document.getElementById('macro-advice').textContent = adviceData.advice || '暫無資料';
+      const data = await adviceRes.json();
+      document.getElementById('macro-last-week').innerText = data.lastWeek || '暫無資料';
+      document.getElementById('macro-this-week').innerText = data.thisWeek || '暫無資料';
+      document.getElementById('macro-bull-bear-tw').innerText = `多空：${data.bullBear_TW || '未知'}`;
+      document.getElementById('macro-advice-tw').innerText = data.advice_TW || '暫無資料';
+      document.getElementById('macro-bull-bear-us').innerText = `多空：${data.bullBear_US || '未知'}`;
+      document.getElementById('macro-advice-us').innerText = data.advice_US || '暫無資料';
+    }
+  } catch (err) {
+    console.error("Failed to load macro data:", err);
+  }
+
+  // 3. Load Fear & Greed Data
+  try {
+    const fgRes = await fetchWithRetry(`${API_BASE}/macro-fear-greed`);
+    if (fgRes.ok) {
+      const fgData = await fgRes.json();
       
-      const bullBear = document.getElementById('macro-bull-bear');
-      if (adviceData.bullBear) {
-        bullBear.textContent = `多空：${adviceData.bullBear}`;
-        if (adviceData.bullBear.includes('多') || adviceData.bullBear.toLowerCase().includes('bull')) {
-          bullBear.style.background = 'rgba(16, 185, 129, 0.2)';
-          bullBear.style.color = 'var(--success-color)';
-        } else if (adviceData.bullBear.includes('空') || adviceData.bullBear.toLowerCase().includes('bear')) {
-          bullBear.style.background = 'rgba(239, 68, 68, 0.2)';
-          bullBear.style.color = 'var(--danger-color)';
-        }
+      const vixVal = document.getElementById('macro-vix-val');
+      if (fgData.vix !== 'N/A') {
+        vixVal.innerText = fgData.vix;
+        // VIX > 30 usually means high fear
+        vixVal.style.color = fgData.vix > 30 ? '#ef4444' : (fgData.vix < 20 ? '#10b981' : '#f59e0b');
+      } else {
+        vixVal.innerText = '暫無';
+      }
+
+      const greedVal = document.getElementById('macro-greed-val');
+      const greedRating = document.getElementById('macro-greed-rating');
+      if (fgData.greed_score !== 'N/A') {
+        greedVal.innerText = fgData.greed_score;
+        let ratingText = fgData.greed_rating;
+        // Translate some common CNN ratings if possible, or just capitalize
+        const trans = {
+          'extreme fear': '極度恐懼 🥶',
+          'fear': '恐懼 😨',
+          'neutral': '中立 😐',
+          'greed': '貪婪 🤑',
+          'extreme greed': '極度貪婪 🚀'
+        };
+        ratingText = trans[ratingText.toLowerCase()] || ratingText;
+        greedRating.innerText = ratingText;
+        
+        let color = 'white';
+        let bg = 'transparent';
+        if (fgData.greed_score < 25) { color = '#ef4444'; bg = 'rgba(239,68,68,0.2)'; }
+        else if (fgData.greed_score < 45) { color = '#f87171'; bg = 'rgba(248,113,113,0.2)'; }
+        else if (fgData.greed_score < 55) { color = '#f59e0b'; bg = 'rgba(245,158,11,0.2)'; }
+        else if (fgData.greed_score < 75) { color = '#34d399'; bg = 'rgba(52,211,153,0.2)'; }
+        else { color = '#10b981'; bg = 'rgba(16,185,129,0.2)'; }
+        
+        greedVal.style.color = color;
+        greedRating.style.color = color;
+        greedRating.style.background = bg;
+      } else {
+        greedVal.innerText = '暫無';
+        greedRating.innerText = '--';
       }
     }
   } catch (err) {
-    console.error("Failed to load macro advice:", err);
-    document.getElementById('macro-last-week').textContent = '無法取得資料';
-    document.getElementById('macro-this-week').textContent = '無法取得資料';
-    document.getElementById('macro-advice').textContent = '無法取得資料';
-    document.getElementById('macro-bull-bear').textContent = '多空：未知';
+    console.error("Failed to load fear/greed data:", err);
   }
 }
 
