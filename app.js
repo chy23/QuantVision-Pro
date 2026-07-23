@@ -472,12 +472,29 @@ function renderTableData(dataId, data) {
 
     let valStr = '-';
     if (item.eps !== 'N/A' && parseFloat(item.eps) > 0) {
-      valStr = `<span style="font-size: 0.85rem; color: var(--text-secondary);">15 × ${item.eps}</span>`;
+      valStr = `<div style="font-size: 0.8rem; color: var(--text-secondary);">15 × ${item.eps}</div><div style="font-weight: 600; color: var(--text-primary);">=${(15 * parseFloat(item.eps)).toFixed(2)}</div>`;
+    }
+
+    let kdDisplay = item.kd;
+    if (item.kd !== 'N/A' && item.kd.includes('/')) {
+      const [k, d] = item.kd.split('/');
+      kdDisplay = `<div style="font-size: 0.85rem; line-height: 1.4;">K:${k}<br/>D:${d}</div>`;
+    }
+
+    let macdDisplay = item.macd;
+    if (item.macd !== 'N/A' && item.macd.includes('/')) {
+      const [m, s] = item.macd.split('/');
+      macdDisplay = `<div style="font-size: 0.85rem; line-height: 1.4;">MACD:${m}<br/>Sig:${s}</div>`;
     }
 
     html += `
       <tr style="${rowStyle}">
-        <td><strong><a href="${linkURL}" target="_blank" style="color: inherit; text-decoration: underline;">${item.symbol}</a></strong><br/><span style="font-size: 0.85rem; color: var(--text-secondary);">${item.name}</span></td>
+        <td>
+          <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-start;">
+            <strong><a href="${linkURL}" target="_blank" style="color: inherit; text-decoration: none; font-size: 1.05rem; border-bottom: 1px dashed rgba(255,255,255,0.3); padding-bottom: 2px;">${item.symbol}</a></strong>
+            <span style="font-size: 0.75rem; color: var(--text-secondary); background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px;" title="${item.name}">${item.name}</span>
+          </div>
+        </td>
         <td><a href="${linkURL}" target="_blank" style="color: inherit; text-decoration: none;">${item.currentPrice}</a></td>
         <td>${valStr}</td>
         <td style="color: var(--text-primary); font-weight: 600;">${item.buyPrice || '-'}</td>
@@ -487,8 +504,8 @@ function renderTableData(dataId, data) {
         <td style="color: ${epsColor};">${item.eps}</td>
         <td style="color: ${roeColor};">${item.roe}</td>
         <td style="color: ${roaColor};">${item.roa}</td>
-        <td style="color: ${kdColor};">${item.kd}</td>
-        <td style="color: ${macdColor};">${item.macd}</td>
+        <td style="color: ${kdColor};">${kdDisplay}</td>
+        <td style="color: ${macdColor};">${macdDisplay}</td>
         <td style="font-size: 0.85rem; color: var(--text-secondary);">${item.reason}</td>
       </tr>
     `;
