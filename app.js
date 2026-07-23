@@ -160,7 +160,7 @@ const API_BASE = 'https://quantvision-pro.onrender.com/api';
 async function fetchWithRetry(url, options = {}, retries = 3, backoff = 2000) {
   for (let i = 0; i < retries; i++) {
     try {
-      const response = await fetchWithRetry(url, options);
+      const response = await fetch(url, options);
       if (response.ok) {
         return response;
       }
