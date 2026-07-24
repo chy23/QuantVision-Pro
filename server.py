@@ -195,7 +195,7 @@ def scrape_tw_stock_realtime(symbol):
         
         # Check if it's down (Yahoo TW uses different classes for up/down, but text might not have minus)
         # We can look at the color class: C($c-trend-down)
-        is_down = 'trend-down' in price_span[0].get('class', []) or 'trend-down' in change_spans[0].get('class', [])
+        is_down = any('trend-down' in c for c in price_span[0].get('class', [])) or any('trend-down' in c for c in change_spans[0].get('class', []))
         
         last_price = float(price_str)
         change = float(change_str)
