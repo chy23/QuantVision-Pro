@@ -354,9 +354,11 @@ async function renderStockCards() {
       const live = dynamicData[stock.symbol];
       const linkURL = getMarket(stock.symbol) === 'TW' ? `https://tw.stock.yahoo.com/quote/${stock.symbol}` : `https://finance.yahoo.com/quote/${stock.symbol}`;
       
-      const livePriceHTML = live 
-        ? `<div class="data-row"><span class="data-label">最新即時價</span><span class="data-value ${live.change >= 0 ? 'positive' : 'negative'}"><a href="${linkURL}" target="_blank" style="color: inherit; text-decoration: none;">${live.currentPrice} (${live.changePercent}%)</a></span></div>`
-        : `<div class="data-row"><span class="data-label">最新即時價</span><span class="data-value text-secondary">無法取得</span></div>`;
+      let livePriceHTML = `<div class="data-row"><span class="data-label">最新即時價</span><span class="data-value text-secondary">無法取得</span></div>`;
+      if (live) {
+        const sign = live.change > 0 ? '+' : '';
+        livePriceHTML = `<div class="data-row"><span class="data-label">最新即時價</span><span class="data-value ${live.change >= 0 ? 'positive' : 'negative'}"><a href="${linkURL}" target="_blank" style="color: inherit; text-decoration: none;">${live.currentPrice} <span style="font-size:0.9em;">${sign}${live.change} (${sign}${live.changePercent}%)</span></a></span></div>`;
+      }
 
       // Use dynamic data ONLY if yfinance successfully fetched PE/EPS. Otherwise, fallback to curated text.
       const hasValidData = live && live.eps !== 'N/A' && live.eps !== undefined;
@@ -2835,7 +2837,7 @@ const CATEGORY_MAP = {
                     </div>
                   </div>
                   
-                  <div class="data-row"><span class="data-label">最新即時價</span><span class="data-value ${stock.change >= 0 ? 'positive' : 'negative'}">${stock.currentPrice} (${stock.changePercent}%)</span></div>
+                  <div class="data-row"><span class="data-label">最新即時價</span><span class="data-value ${stock.change >= 0 ? 'positive' : 'negative'}">${stock.currentPrice} <span style="font-size:0.9em;">${stock.change > 0 ? '+' : ''}${stock.change} (${stock.change > 0 ? '+' : ''}${stock.changePercent}%)</span></span></div>
                   
                   <div class="data-row">
                     <span class="data-label">預估 EPS / 效率</span>
@@ -2910,7 +2912,7 @@ const CATEGORY_MAP = {
                   </div>
                 </div>
                 
-                <div class="data-row"><span class="data-label">最新即時價</span><span class="data-value ${stock.change >= 0 ? 'positive' : 'negative'}">${stock.currentPrice} (${stock.changePercent}%)</span></div>
+                <div class="data-row"><span class="data-label">最新即時價</span><span class="data-value ${stock.change >= 0 ? 'positive' : 'negative'}">${stock.currentPrice} <span style="font-size:0.9em;">${stock.change > 0 ? '+' : ''}${stock.change} (${stock.change > 0 ? '+' : ''}${stock.changePercent}%)</span></span></div>
                 
                 <div class="data-row">
                   <span class="data-label">預估 EPS</span>
